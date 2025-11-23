@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from './auth/auth.module';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -17,11 +17,63 @@ import { BlogPost } from './blog/entities/blog-post.entity';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    TypeOrmModule.forRoot({
-      type: 'sqlite',
-      database: 'dev.db',
-      entities: [User, Tour, Service, BlogPost],
-      synchronize: true,
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => {
+        const dbType = configService
+          .get<string>('DB_TYPE', 'sqlite')
+          .toLowerCase();
+
+        // SQLite configuration (default - no installation needed)
+        if (dbType === 'sqlite') {
+          return {
+            type: 'sqlite',
+            database: configService.get<string>('DB_DATABASE', 'dev.db'),
+            entities: [User, Tour, Service, BlogPost],
+            synchronize: configService.get<string>('NODE_ENV') !== 'production',
+            logging: configService.get<string>('NODE_ENV') === 'development',
+          };
+        }
+
+        // PostgreSQL configuration
+        if (dbType === 'postgres') {
+          return {
+            type: 'postgres',
+            host: configService.get<string>('DB_HOST', 'localhost'),
+            port: configService.get<number>('DB_PORT', 5432),
+            username: configService.get<string>('DB_USERNAME', 'postgres'),
+            password: configService.get<string>('DB_PASSWORD', ''),
+            database: configService.get<string>('DB_DATABASE', 'motobiketours'),
+            entities: [User, Tour, Service, BlogPost],
+            synchronize: configService.get<string>('NODE_ENV') !== 'production',
+            logging: configService.get<string>('NODE_ENV') === 'development',
+          };
+        }
+
+        // MySQL/MariaDB configuration
+        if (dbType === 'mysql' || dbType === 'mariadb') {
+          return {
+            type: 'mysql',
+            host: configService.get<string>('DB_HOST', 'localhost'),
+            port: configService.get<number>('DB_PORT', 3306),
+            username: configService.get<string>('DB_USERNAME', 'root'),
+            password: configService.get<string>('DB_PASSWORD', ''),
+            database: configService.get<string>('DB_DATABASE', 'motobiketours'),
+            entities: [User, Tour, Service, BlogPost],
+            synchronize: configService.get<string>('NODE_ENV') !== 'production',
+            logging: configService.get<string>('NODE_ENV') === 'development',
+          };
+        }
+
+        // Default to SQLite if unknown type
+        return {
+          type: 'sqlite',
+          database: 'dev.db',
+          entities: [User, Tour, Service, BlogPost],
+          synchronize: true,
+        };
+      },
+      inject: [ConfigService],
     }),
     AuthModule,
     CloudinaryModule,
@@ -33,4 +85,4 @@ import { BlogPost } from './blog/entities/blog-post.entity';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}

@@ -5,16 +5,16 @@ import { Service } from './entities/service.entity';
 
 @Injectable()
 export class ServicesService {
-    constructor(
-        @InjectRepository(Service)
-        private servicesRepository: Repository<Service>,
-    ) { }
+  constructor(
+    @InjectRepository(Service)
+    private servicesRepository: Repository<Service>,
+  ) {}
 
-    findAll() {
-        return this.servicesRepository.find();
-    }
+  findAll() {
+    return this.servicesRepository.find();
+  }
 
-    findOne(id: string) {
-        return this.servicesRepository.findOneBy({ id });
-    }
+  findOne(id: string) {
+    return this.servicesRepository.findOneBy({ id });
+  }
 }

@@ -6,8 +6,8 @@ import { Tour } from './entities/tour.entity';
 import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Tour]), CloudinaryModule],
-    controllers: [ToursController],
-    providers: [ToursService],
+  imports: [TypeOrmModule.forFeature([Tour]), CloudinaryModule],
+  controllers: [ToursController],
+  providers: [ToursService],
 })
-export class ToursModule { }
+export class ToursModule {}
