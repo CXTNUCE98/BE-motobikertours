@@ -21,12 +21,12 @@ export class CreateTourDto {
   slug: string;
 
   @ApiPropertyOptional({
-    example: 'https://res.cloudinary.com/.../thumbnail.jpg',
-    description: 'Thumbnail image URL',
+    type: 'string',
+    format: 'binary',
+    description: 'Thumbnail image file',
   })
   @IsOptional()
-  @IsString()
-  thumbnail: string;
+  thumbnail: any;
 
   @ApiPropertyOptional({
     example: [
