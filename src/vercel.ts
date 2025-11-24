@@ -49,7 +49,16 @@ const bootstrap = async () => {
         .addBearerAuth()
         .build();
       const document = SwaggerModule.createDocument(app, config);
-      SwaggerModule.setup('api', app, document);
+      SwaggerModule.setup('api', app, document, {
+        customSiteTitle: 'Motobike Tours API',
+        customJs: [
+          'https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-bundle.js',
+          'https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-standalone-preset.js',
+        ],
+        customCssUrl: [
+          'https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui.css',
+        ],
+      });
 
       await app.init();
       console.log('NestJS App Initialized successfully');
