@@ -20,33 +20,67 @@ import { BlogPost } from './blog/entities/blog-post.entity';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
+        const entities = [User, Tour, Service, BlogPost];
+        const nodeEnv = configService.get<string>('NODE_ENV', 'development');
+        const isProduction = nodeEnv === 'production';
+        const shouldSynchronize =
+          configService.get<string>('DB_SYNCHRONIZE', '').toLowerCase() !==
+            'false' && !isProduction;
+        const shouldLog =
+          configService.get<string>('DB_LOGGING', '').toLowerCase() === 'true' ||
+          nodeEnv === 'development';
+
+        const baseConfig = {
+          entities,
+          synchronize: shouldSynchronize,
+          logging: shouldLog,
+        };
         const dbType = configService
           .get<string>('DB_TYPE', 'sqlite')
           .toLowerCase();
+        const postgresUrl =
+          configService.get<string>('DATABASE_URL') ||
+          configService.get<string>('DB_URL') ||
+          configService.get<string>('POSTGRES_URL');
+        const sslEnabled =
+          configService.get<string>('DB_SSL', isProduction ? 'true' : 'false') ===
+          'true';
+        const sslConfig = sslEnabled
+          ? {
+              ssl: { rejectUnauthorized: false },
+              extra: { ssl: { rejectUnauthorized: false } },
+            }
+          : {};
 
         // SQLite configuration (default - no installation needed)
         if (dbType === 'sqlite') {
           return {
             type: 'sqlite',
             database: configService.get<string>('DB_DATABASE', 'dev.db'),
-            entities: [User, Tour, Service, BlogPost],
-            synchronize: configService.get<string>('NODE_ENV') !== 'production',
-            logging: configService.get<string>('NODE_ENV') === 'development',
+            ...baseConfig,
           };
         }
 
         // PostgreSQL configuration
         if (dbType === 'postgres') {
+          if (postgresUrl) {
+            return {
+              type: 'postgres',
+              url: postgresUrl,
+              ...baseConfig,
+              ...sslConfig,
+            };
+          }
+
           return {
             type: 'postgres',
             host: configService.get<string>('DB_HOST', 'localhost'),
-            port: configService.get<number>('DB_PORT', 5432),
+            port: parseInt(configService.get<string>('DB_PORT', '5432'), 10),
             username: configService.get<string>('DB_USERNAME', 'postgres'),
             password: configService.get<string>('DB_PASSWORD', ''),
             database: configService.get<string>('DB_DATABASE', 'motobiketours'),
-            entities: [User, Tour, Service, BlogPost],
-            synchronize: configService.get<string>('NODE_ENV') !== 'production',
-            logging: configService.get<string>('NODE_ENV') === 'development',
+            ...baseConfig,
+            ...sslConfig,
           };
         }
 
@@ -55,13 +89,11 @@ import { BlogPost } from './blog/entities/blog-post.entity';
           return {
             type: 'mysql',
             host: configService.get<string>('DB_HOST', 'localhost'),
-            port: configService.get<number>('DB_PORT', 3306),
+            port: parseInt(configService.get<string>('DB_PORT', '3306'), 10),
             username: configService.get<string>('DB_USERNAME', 'root'),
             password: configService.get<string>('DB_PASSWORD', ''),
             database: configService.get<string>('DB_DATABASE', 'motobiketours'),
-            entities: [User, Tour, Service, BlogPost],
-            synchronize: configService.get<string>('NODE_ENV') !== 'production',
-            logging: configService.get<string>('NODE_ENV') === 'development',
+            ...baseConfig,
           };
         }
 
@@ -69,8 +101,7 @@ import { BlogPost } from './blog/entities/blog-post.entity';
         return {
           type: 'sqlite',
           database: 'dev.db',
-          entities: [User, Tour, Service, BlogPost],
-          synchronize: true,
+          ...baseConfig,
         };
       },
       inject: [ConfigService],
