@@ -23,12 +23,14 @@ import { BlogPost } from './blog/entities/blog-post.entity';
         const entities = [User, Tour, Service, BlogPost];
         const nodeEnv = configService.get<string>('NODE_ENV', 'development');
         const isProduction = nodeEnv === 'production';
+        const dbSyncConfig = configService.get<string>('DB_SYNCHRONIZE');
         const shouldSynchronize =
-          configService.get<string>('DB_SYNCHRONIZE', '').toLowerCase() !==
-            'false' && !isProduction;
+          dbSyncConfig !== undefined
+            ? dbSyncConfig.toLowerCase() === 'true'
+            : !isProduction;
         const shouldLog =
-          configService.get<string>('DB_LOGGING', '').toLowerCase() === 'true' ||
-          nodeEnv === 'development';
+          configService.get<string>('DB_LOGGING', '').toLowerCase() ===
+            'true' || nodeEnv === 'development';
 
         const baseConfig = {
           entities,
@@ -43,8 +45,10 @@ import { BlogPost } from './blog/entities/blog-post.entity';
           configService.get<string>('DB_URL') ||
           configService.get<string>('POSTGRES_URL');
         const sslEnabled =
-          configService.get<string>('DB_SSL', isProduction ? 'true' : 'false') ===
-          'true';
+          configService.get<string>(
+            'DB_SSL',
+            isProduction ? 'true' : 'false',
+          ) === 'true';
         const sslConfig = sslEnabled
           ? {
               ssl: { rejectUnauthorized: false },
