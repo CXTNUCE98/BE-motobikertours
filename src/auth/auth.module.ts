@@ -23,7 +23,9 @@ import { JwtStrategy } from './jwt.strategy';
         });
 
         if (!secret) {
-          console.error('WARNING: JWT_SECRET is not set in environment variables!');
+          console.error(
+            'WARNING: JWT_SECRET is not set in environment variables!',
+          );
         }
 
         return {
@@ -40,4 +42,4 @@ import { JwtStrategy } from './jwt.strategy';
   controllers: [AuthController],
   exports: [AuthService],
 })
-export class AuthModule { }
+export class AuthModule {}

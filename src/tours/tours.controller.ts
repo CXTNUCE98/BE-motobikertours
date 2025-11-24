@@ -7,7 +7,13 @@ import {
   UploadedFile,
   Param,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiConsumes,
+  ApiBody,
+} from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ToursService } from './tours.service';
 import { CreateTourDto } from './dto/create-tour.dto';
@@ -15,7 +21,7 @@ import { CreateTourDto } from './dto/create-tour.dto';
 @ApiTags('tours')
 @Controller('tours')
 export class ToursController {
-  constructor(private readonly toursService: ToursService) { }
+  constructor(private readonly toursService: ToursService) {}
 
   @Get()
   @ApiOperation({ summary: 'Get all tours' })
@@ -39,7 +45,10 @@ export class ToursController {
     description: 'Tour data with thumbnail image',
     type: CreateTourDto,
   })
-  @ApiResponse({ status: 201, description: 'The tour has been successfully created.' })
+  @ApiResponse({
+    status: 201,
+    description: 'The tour has been successfully created.',
+  })
   @UseInterceptors(FileInterceptor('thumbnail'))
   create(
     @Body() createTourDto: CreateTourDto,

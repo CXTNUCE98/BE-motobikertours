@@ -5,7 +5,7 @@ import { ServicesService } from './services.service';
 @ApiTags('services')
 @Controller('services')
 export class ServicesController {
-  constructor(private readonly servicesService: ServicesService) { }
+  constructor(private readonly servicesService: ServicesService) {}
 
   @Get()
   @ApiOperation({ summary: 'Get all services' })

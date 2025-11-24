@@ -45,6 +45,12 @@ Vào tab **Settings** -> **Environment Variables** và thêm các biến sau:
 
 ## Tóm tắt thay đổi trong Code
 
-Tôi đã cập nhật file `src/app.module.ts` để cho phép biến `DB_SYNCHRONIZE` hoạt động ngay cả trong môi trường Production (trước đây nó bị chặn).
+1.  **Thay thế `bcrypt` bằng `bcryptjs`**:
+    - `bcrypt` là thư viện native (C++), rất hay gây lỗi khi deploy lên Vercel (Serverless) do khác biệt hệ điều hành (Windows vs Linux).
+    - Tôi đã chuyển sang dùng `bcryptjs` (thuần Javascript) để đảm bảo chạy ổn định trên mọi môi trường.
 
-File `.env.example` cũng đã được cập nhật để bạn dễ dàng tham khảo.
+2.  **Cập nhật `src/app.module.ts`**:
+    - Cho phép biến `DB_SYNCHRONIZE` hoạt động ngay cả trong môi trường Production (trước đây nó bị chặn).
+
+3.  **Cập nhật `.env.example`**:
+    - Thêm hướng dẫn chi tiết về các biến môi trường cần thiết cho Vercel Postgres.

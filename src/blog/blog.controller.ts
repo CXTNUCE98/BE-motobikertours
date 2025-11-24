@@ -5,7 +5,7 @@ import { BlogService } from './blog.service';
 @ApiTags('blog')
 @Controller('blog')
 export class BlogController {
-  constructor(private readonly blogService: BlogService) { }
+  constructor(private readonly blogService: BlogService) {}
 
   @Get()
   @ApiOperation({ summary: 'Get all blog posts' })
