@@ -11,13 +11,16 @@ export class BlogPost {
   id: string;
 
   @Column()
-  title: string;
+  name: string;
 
   @Column({ unique: true })
   slug: string;
 
+  @Column()
+  lang: string;
+
   @Column('text')
-  excerpt: string;
+  shortDescription: string;
 
   @Column('text')
   content: string;
@@ -25,15 +28,21 @@ export class BlogPost {
   @Column()
   thumbnail: string;
 
-  @Column()
+  @Column({ nullable: true })
   category: string;
 
-  @Column()
+  @Column({ nullable: true })
   author_name: string;
 
   // SQLite does not support array type, use simple-array (comma-separated)
   @Column('simple-array')
   tags: string[];
+
+  @Column()
+  numWords: number;
+
+  @Column()
+  status: string;
 
   @CreateDateColumn()
   created_at: Date;
