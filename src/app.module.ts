@@ -90,9 +90,13 @@ import { BlogPost } from './blog/entities/blog-post.entity';
           };
         }
 
-        // PostgreSQL configuration
         if (dbType === 'postgres') {
           if (postgresUrl) {
+            console.log('Using Postgres URL connection');
+            // Mask password in log
+            const maskedUrl = postgresUrl.replace(/:([^:@]+)@/, ':****@');
+            console.log(`Connection URL: ${maskedUrl}`);
+
             return {
               type: 'postgres',
               url: postgresUrl,
