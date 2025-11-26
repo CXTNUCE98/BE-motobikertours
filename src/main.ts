@@ -52,6 +52,8 @@ async function bootstrap() {
     res.json(document);
   });
 
-  await app.listen(process.env.PORT || 3002);
+  await app.listen(process.env.PORT || 3001);
+  console.log(`🚀 Application is running on: http://localhost:${process.env.PORT || 3001}`);
+  console.log(`📚 Swagger API docs: http://localhost:${process.env.PORT || 3001}/api`);
 }
 bootstrap();

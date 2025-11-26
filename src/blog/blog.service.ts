@@ -1,8 +1,9 @@
 import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Like } from 'typeorm';
 import { BlogPost } from './entities/blog-post.entity';
 import { CreateBlogDto } from './dto/create-blog.dto';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class BlogService {
@@ -29,8 +30,31 @@ export class BlogService {
     return this.blogRepository.save(blogPost);
   }
 
-  findAll() {
-    return this.blogRepository.find();
+  async findAll(query: PaginationDto) {
+    const { q, p = 1, r = 10 } = query;
+    const skip = (p - 1) * r;
+
+    const where = q
+      ? [
+        { name: Like(`%${q}%`) },
+        { shortDescription: Like(`%${q}%`) },
+      ]
+      : {};
+
+    const [data, total] = await this.blogRepository.findAndCount({
+      where,
+      skip,
+      take: r,
+      order: { created_at: 'DESC' },
+    });
+
+    return {
+      data,
+      total,
+      page: p,
+      perPage: r,
+      totalPages: Math.ceil(total / r),
+    };
   }
 
   findOne(id: string) {

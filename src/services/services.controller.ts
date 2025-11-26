@@ -1,17 +1,18 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
+import { PaginationDto } from '../common/dto/pagination.dto';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ServicesService } from './services.service';
 
 @ApiTags('services')
 @Controller('services')
 export class ServicesController {
-  constructor(private readonly servicesService: ServicesService) {}
+  constructor(private readonly servicesService: ServicesService) { }
 
   @Get()
   @ApiOperation({ summary: 'Get all services' })
   @ApiResponse({ status: 200, description: 'Return all services' })
-  findAll() {
-    return this.servicesService.findAll();
+  findAll(@Query() query: PaginationDto) {
+    return this.servicesService.findAll(query);
   }
 
   @Get(':id')

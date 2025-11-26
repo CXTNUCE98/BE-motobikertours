@@ -6,7 +6,9 @@ import {
   Delete,
   Param,
   Body,
+  Query,
 } from '@nestjs/common';
+import { PaginationDto } from '../common/dto/pagination.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -16,13 +18,13 @@ import { User } from './entities/user.entity';
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
 
   @Get()
   @ApiOperation({ summary: 'Get all users' })
   @ApiResponse({ status: 200, description: 'Return all users', type: [User] })
-  async findAll(): Promise<User[]> {
-    return this.usersService.findAll();
+  async findAll(@Query() query: PaginationDto) {
+    return this.usersService.findAll(query);
   }
 
   @Get(':id')

@@ -7,6 +7,7 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  Query,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -20,6 +21,7 @@ import { BlogService } from './blog.service';
 import { CreateBlogDto } from './dto/create-blog.dto';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { UploadImageResponseDto } from './dto/upload-image.dto';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
 @ApiTags('blog')
 @Controller('blog')
@@ -27,7 +29,7 @@ export class BlogController {
   constructor(
     private readonly blogService: BlogService,
     private readonly cloudinaryService: CloudinaryService,
-  ) {}
+  ) { }
 
   @Post()
   @ApiOperation({ summary: 'Create a new blog post' })
@@ -99,8 +101,8 @@ export class BlogController {
   @Get()
   @ApiOperation({ summary: 'Get all blog posts' })
   @ApiResponse({ status: 200, description: 'Return all blog posts' })
-  findAll() {
-    return this.blogService.findAll();
+  findAll(@Query() query: PaginationDto) {
+    return this.blogService.findAll(query);
   }
 
   @Get(':id')
