@@ -1,13 +1,8 @@
-import {
-  Injectable,
-  UnauthorizedException,
-  ConflictException,
-} from '@nestjs/common';
+import { Injectable, ConflictException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { CreateUserDto } from '../users/dto/create-user.dto';
-import { LoginDto } from './dto/login.dto';
 
 @Injectable()
 export class AuthService {
@@ -31,6 +26,7 @@ export class AuthService {
       if (!isPasswordValid) {
         return null;
       }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password, ...result } = user;
       return result;
     } catch (error) {
@@ -43,7 +39,13 @@ export class AuthService {
   async login(user: any) {
     try {
       console.log('Creating JWT token for user:', user.id);
-      const payload = { username: user.email, sub: user.id, role: user.role };
+      const payload = {
+        username: user.username,
+        email: user.email,
+        sub: user.id,
+        isAdmin: user.isAdmin,
+        avatar: user.avatar,
+      };
       const token = this.jwtService.sign(payload);
       console.log('JWT token created successfully');
       return {

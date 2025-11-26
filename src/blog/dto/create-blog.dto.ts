@@ -51,7 +51,26 @@ export class CreateBlogDto {
   @IsNumber()
   numWords: number;
 
+  @ApiProperty({ example: 'Technology' })
+  @IsString()
+  @IsNotEmpty()
+  category: string;
+
   @ApiProperty({ enum: BlogStatus, example: BlogStatus.WAITING })
   @IsEnum(BlogStatus)
   status: string;
+
+  @ApiProperty({
+    example: {
+      authId: 'uuid-123',
+      avatar: 'image-url',
+      username: 'admin',
+    },
+  })
+  @IsNotEmpty()
+  author: {
+    authId: string;
+    avatar: string;
+    username: string;
+  };
 }

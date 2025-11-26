@@ -31,8 +31,12 @@ export class BlogPost {
   @Column({ nullable: true })
   category: string;
 
-  @Column({ nullable: true })
-  author_name: string;
+  @Column('simple-json', { nullable: true })
+  author: {
+    authId: string;
+    avatar: string;
+    username: string;
+  };
 
   // SQLite does not support array type, use simple-array (comma-separated)
   @Column('simple-array')

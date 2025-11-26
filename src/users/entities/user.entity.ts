@@ -5,15 +5,13 @@ import {
   CreateDateColumn,
 } from 'typeorm';
 
-export enum UserRole {
-  ADMIN = 'ADMIN',
-  USER = 'USER',
-}
-
 @Entity()
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @Column({ unique: true })
+  username: string;
 
   @Column({ unique: true })
   email: string;
@@ -21,11 +19,17 @@ export class User {
   @Column()
   password: string;
 
-  @Column()
-  name: string;
+  @Column({ default: false })
+  isAdmin: boolean;
 
-  @Column({ default: UserRole.USER })
-  role: UserRole;
+  @Column({ default: 'Asia/Ho_Chi_Minh' })
+  timezone: string;
+
+  @Column({ nullable: true })
+  lastPasswordChange: Date;
+
+  @Column({ default: '' })
+  avatar: string;
 
   @Column({ nullable: true })
   provider: string;

@@ -7,7 +7,7 @@ import {
   Param,
   Body,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -46,11 +46,52 @@ export class UsersController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update user' })
+  @ApiBody({
+    type: UpdateUserDto,
+    description: 'User update data',
+    examples: {
+      'Update username and email': {
+        value: {
+          username: 'john_doe',
+          email: 'john.doe@example.com',
+        },
+      },
+      'Update password': {
+        value: {
+          password: 'NewP@ssw0rd123',
+        },
+      },
+      'Update admin status': {
+        value: {
+          isAdmin: true,
+        },
+      },
+      'Update profile': {
+        value: {
+          username: 'john_doe',
+          timezone: 'America/New_York',
+          avatar: 'https://res.cloudinary.com/demo/image/upload/avatar.jpg',
+        },
+      },
+      'Full update': {
+        value: {
+          username: 'john_doe',
+          email: 'john.doe@example.com',
+          password: 'NewP@ssw0rd123',
+          isAdmin: true,
+          timezone: 'America/New_York',
+          avatar: 'https://res.cloudinary.com/demo/image/upload/avatar.jpg',
+        },
+      },
+    },
+  })
   @ApiResponse({
     status: 200,
     description: 'The user has been successfully updated.',
     type: User,
   })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 400, description: 'Invalid input data' })
   async update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
