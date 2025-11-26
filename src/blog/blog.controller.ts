@@ -8,7 +8,13 @@ import {
   UploadedFile,
   BadRequestException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiConsumes,
+  ApiBody,
+} from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { BlogService } from './blog.service';
 import { CreateBlogDto } from './dto/create-blog.dto';
@@ -21,12 +27,15 @@ export class BlogController {
   constructor(
     private readonly blogService: BlogService,
     private readonly cloudinaryService: CloudinaryService,
-  ) { }
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Create a new blog post' })
   @ApiResponse({ status: 201, description: 'Blog post created successfully' })
-  @ApiResponse({ status: 409, description: 'Blog with this name already exists' })
+  @ApiResponse({
+    status: 409,
+    description: 'Blog with this name already exists',
+  })
   @ApiResponse({ status: 400, description: 'Bad request' })
   create(@Body() createBlogDto: CreateBlogDto) {
     return this.blogService.create(createBlogDto);
@@ -59,19 +68,29 @@ export class BlogController {
     }
 
     // Validate file type
-    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const allowedMimeTypes = [
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+    ];
     if (!allowedMimeTypes.includes(file.mimetype)) {
-      throw new BadRequestException('Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed');
+      throw new BadRequestException(
+        'Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed',
+      );
     }
 
-    // Upload to Cloudinary
-    const result = await this.cloudinaryService.uploadImage(file);
+    // Generate custom image ID
+    const uniqueId = Math.random().toString(36).substring(2, 10);
+    const imageId = `image-${uniqueId}`;
 
-    // Generate custom image ID (similar to "image-j_muyWVa" format)
-    const imageId = `image-${result.public_id.split('/').pop()}`;
+    // Upload to Cloudinary
+    const result = await this.cloudinaryService.uploadImage(file, {
+      public_id: imageId,
+    });
 
     return {
-      imageId,
+      imageId: result.public_id,
       url: result.url,
       secureUrl: result.secure_url,
     };
