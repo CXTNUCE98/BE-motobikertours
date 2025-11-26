@@ -53,11 +53,27 @@ import { BlogPost } from './blog/entities/blog-post.entity';
         if (!dbType) {
           dbType = 'sqlite';
         }
+
         const sslEnabled =
           configService.get<string>(
             'DB_SSL',
             isProduction ? 'true' : 'false',
           ) === 'true';
+
+        console.log(
+          `Database Configuration: Type=${dbType}, Sync=${shouldSynchronize}, SSL=${sslEnabled}`,
+        );
+        if (dbType === 'postgres' && !postgresUrl) {
+          console.error(
+            'CRITICAL: Database type is postgres but no connection URL found!',
+          );
+        }
+        if (dbType === 'sqlite') {
+          console.warn(
+            'WARNING: Using SQLite. This will likely fail on Vercel/Serverless environments due to read-only file system.',
+          );
+        }
+
         const sslConfig = sslEnabled
           ? {
               ssl: { rejectUnauthorized: false },
