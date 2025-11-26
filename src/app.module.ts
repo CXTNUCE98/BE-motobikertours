@@ -37,13 +37,22 @@ import { BlogPost } from './blog/entities/blog-post.entity';
           synchronize: shouldSynchronize,
           logging: shouldLog,
         };
-        const dbType = configService
-          .get<string>('DB_TYPE', 'sqlite')
-          .toLowerCase();
         const postgresUrl =
           configService.get<string>('DATABASE_URL') ||
           configService.get<string>('DB_URL') ||
           configService.get<string>('POSTGRES_URL');
+
+        let dbType = configService.get<string>('DB_TYPE', '').toLowerCase();
+
+        // Auto-detect postgres if URL is present and dbType is not explicitly set
+        if (!dbType && postgresUrl) {
+          dbType = 'postgres';
+        }
+
+        // Default to sqlite if still not set
+        if (!dbType) {
+          dbType = 'sqlite';
+        }
         const sslEnabled =
           configService.get<string>(
             'DB_SSL',
