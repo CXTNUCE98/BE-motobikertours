@@ -9,10 +9,12 @@ import { ToursModule } from './tours/tours.module';
 import { ServicesModule } from './services/services.module';
 import { BlogModule } from './blog/blog.module';
 import { UsersModule } from './users/users.module';
+import { CommentsModule } from './comments/comments.module';
 import { User } from './users/entities/user.entity';
 import { Tour } from './tours/entities/tour.entity';
 import { Service } from './services/entities/service.entity';
 import { BlogPost } from './blog/entities/blog-post.entity';
+import { Comment, CommentLike } from './comments/entities/comment.entity';
 
 @Module({
   imports: [
@@ -20,7 +22,7 @@ import { BlogPost } from './blog/entities/blog-post.entity';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
-        const entities = [User, Tour, Service, BlogPost];
+        const entities = [User, Tour, Service, BlogPost, Comment, CommentLike];
         const nodeEnv = configService.get<string>('NODE_ENV', 'development');
         const isProduction = nodeEnv === 'production';
         const dbSyncConfig = configService.get<string>('DB_SYNCHRONIZE');
@@ -116,6 +118,7 @@ import { BlogPost } from './blog/entities/blog-post.entity';
     ServicesModule,
     BlogModule,
     UsersModule,
+    CommentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
