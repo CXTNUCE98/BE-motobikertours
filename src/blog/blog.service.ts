@@ -1,16 +1,16 @@
 import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like } from 'typeorm';
+import { Repository, Brackets } from 'typeorm';
 import { BlogPost } from './entities/blog-post.entity';
 import { CreateBlogDto } from './dto/create-blog.dto';
-import { PaginationDto } from '../common/dto/pagination.dto';
+import { GetBlogDto } from './dto/get-blog.dto';
 
 @Injectable()
 export class BlogService {
   constructor(
     @InjectRepository(BlogPost)
     private blogRepository: Repository<BlogPost>,
-  ) { }
+  ) {}
 
   async create(createBlogDto: CreateBlogDto): Promise<BlogPost> {
     // Generate slug from name
@@ -30,23 +30,50 @@ export class BlogService {
     return this.blogRepository.save(blogPost);
   }
 
-  async findAll(query: PaginationDto) {
-    const { q, p = 1, r = 10 } = query;
+  async findAll(query: GetBlogDto) {
+    const { q, p = 1, r = 10, category, tags, name } = query;
     const skip = (p - 1) * r;
 
-    const where = q
-      ? [
-        { name: Like(`%${q}%`) },
-        { shortDescription: Like(`%${q}%`) },
-      ]
-      : {};
+    const queryBuilder = this.blogRepository.createQueryBuilder('blog');
 
-    const [data, total] = await this.blogRepository.findAndCount({
-      where,
-      skip,
-      take: r,
-      order: { created_at: 'DESC' },
-    });
+    if (q) {
+      queryBuilder.andWhere(
+        new Brackets((qb) => {
+          qb.where('blog.name LIKE :q', { q: `%${q}%` }).orWhere(
+            'blog.shortDescription LIKE :q',
+            { q: `%${q}%` },
+          );
+        }),
+      );
+    }
+
+    if (category) {
+      queryBuilder.andWhere('blog.category = :category', { category });
+    }
+
+    if (tags) {
+      const tagList = tags.split(',').map((t) => t.trim());
+      if (tagList.length > 0) {
+        queryBuilder.andWhere(
+          new Brackets((qb) => {
+            tagList.forEach((tag, index) => {
+              const paramName = `tag${index}`;
+              qb.orWhere(`blog.tags LIKE :${paramName}`, {
+                [paramName]: `%${tag}%`,
+              });
+            });
+          }),
+        );
+      }
+    }
+
+    if (name) {
+      queryBuilder.andWhere('blog.name LIKE :name', { name: `%${name}%` });
+    }
+
+    queryBuilder.orderBy('blog.created_at', 'DESC').skip(skip).take(r);
+
+    const [data, total] = await queryBuilder.getManyAndCount();
 
     return {
       data,

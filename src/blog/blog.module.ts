@@ -6,11 +6,8 @@ import { BlogPost } from './entities/blog-post.entity';
 import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([BlogPost]),
-    CloudinaryModule,
-  ],
+  imports: [TypeOrmModule.forFeature([BlogPost]), CloudinaryModule],
   controllers: [BlogController],
   providers: [BlogService],
 })
-export class BlogModule { }
+export class BlogModule {}

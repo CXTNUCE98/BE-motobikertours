@@ -13,7 +13,7 @@ export class CreateUserDto {
     description: 'Username',
   })
   @IsString()
-  username: string;
+  userName: string;
 
   @ApiProperty({
     example: 'admin@gmail.com',

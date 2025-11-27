@@ -12,7 +12,7 @@ export class ToursService {
     @InjectRepository(Tour)
     private toursRepository: Repository<Tour>,
     private cloudinaryService: CloudinaryService,
-  ) { }
+  ) {}
 
   async create(createTourDto: CreateTourDto, file: Express.Multer.File) {
     let thumbnailUrl = '';
@@ -34,10 +34,7 @@ export class ToursService {
     const skip = (p - 1) * r;
 
     const where = q
-      ? [
-        { title: Like(`%${q}%`) },
-        { description: Like(`%${q}%`) },
-      ]
+      ? [{ title: Like(`%${q}%`) }, { description: Like(`%${q}%`) }]
       : {};
 
     const [data, total] = await this.toursRepository.findAndCount({

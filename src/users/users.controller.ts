@@ -18,7 +18,7 @@ import { User } from './entities/user.entity';
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) { }
+  constructor(private readonly usersService: UsersService) {}
 
   @Get()
   @ApiOperation({ summary: 'Get all users' })
@@ -52,9 +52,9 @@ export class UsersController {
     type: UpdateUserDto,
     description: 'User update data',
     examples: {
-      'Update username and email': {
+      'Update userName and email': {
         value: {
-          username: 'john_doe',
+          userName: 'john_doe',
           email: 'john.doe@example.com',
         },
       },
@@ -70,14 +70,14 @@ export class UsersController {
       },
       'Update profile': {
         value: {
-          username: 'john_doe',
+          userName: 'john_doe',
           timezone: 'America/New_York',
           avatar: 'https://res.cloudinary.com/demo/image/upload/avatar.jpg',
         },
       },
       'Full update': {
         value: {
-          username: 'john_doe',
+          userName: 'john_doe',
           email: 'john.doe@example.com',
           password: 'NewP@ssw0rd123',
           isAdmin: true,

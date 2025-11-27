@@ -64,13 +64,13 @@ export class CreateBlogDto {
     example: {
       authId: 'uuid-123',
       avatar: 'image-url',
-      username: 'admin',
+      userName: 'admin',
     },
   })
   @IsNotEmpty()
   author: {
     authId: string;
     avatar: string;
-    username: string;
+    userName: string;
   };
 }

@@ -10,7 +10,7 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
-  ) { }
+  ) {}
 
   async findOne(email: string): Promise<User | undefined> {
     return this.usersRepository.findOneBy({ email });
@@ -26,10 +26,7 @@ export class UsersService {
     const skip = (p - 1) * r;
 
     const where = q
-      ? [
-        { username: Like(`%${q}%`) },
-        { email: Like(`%${q}%`) },
-      ]
+      ? [{ userName: Like(`%${q}%`) }, { email: Like(`%${q}%`) }]
       : {};
 
     const [data, total] = await this.usersRepository.findAndCount({

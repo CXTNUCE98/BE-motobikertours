@@ -35,7 +35,7 @@ export class BlogPost {
   author: {
     authId: string;
     avatar: string;
-    username: string;
+    userName: string;
   };
 
   // SQLite does not support array type, use simple-array (comma-separated)

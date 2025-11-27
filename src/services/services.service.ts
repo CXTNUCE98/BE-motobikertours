@@ -9,7 +9,7 @@ export class ServicesService {
   constructor(
     @InjectRepository(Service)
     private servicesRepository: Repository<Service>,
-  ) { }
+  ) {}
 
   async findAll(query: PaginationDto) {
     const { q, p = 1, r = 10 } = query;
@@ -17,10 +17,10 @@ export class ServicesService {
 
     const where = q
       ? [
-        { title: Like(`%${q}%`) },
-        { short_title: Like(`%${q}%`) },
-        { description: Like(`%${q}%`) },
-      ]
+          { title: Like(`%${q}%`) },
+          { short_title: Like(`%${q}%`) },
+          { description: Like(`%${q}%`) },
+        ]
       : {};
 
     const [data, total] = await this.servicesRepository.findAndCount({

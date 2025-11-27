@@ -23,7 +23,7 @@ import { Query } from '@nestjs/common';
 @ApiTags('tours')
 @Controller('tours')
 export class ToursController {
-  constructor(private readonly toursService: ToursService) { }
+  constructor(private readonly toursService: ToursService) {}
 
   @Get()
   @ApiOperation({ summary: 'Get all tours' })

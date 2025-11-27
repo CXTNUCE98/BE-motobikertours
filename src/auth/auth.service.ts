@@ -40,7 +40,7 @@ export class AuthService {
     try {
       console.log('Creating JWT token for user:', user.id);
       const payload = {
-        username: user.username,
+        userName: user.userName,
         email: user.email,
         sub: user.id,
         isAdmin: user.isAdmin,
