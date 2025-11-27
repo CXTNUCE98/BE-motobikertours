@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Tour } from './entities/tour.entity';
 import { CreateTourDto } from './dto/create-tour.dto';
+import { UpdateTourDto } from './dto/update-tour.dto';
+import { GetToursDto, DurationRange } from './dto/get-tours.dto';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
-import { PaginationDto } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class ToursService {
@@ -29,20 +30,56 @@ export class ToursService {
     return this.toursRepository.save(tour);
   }
 
-  async findAll(query: PaginationDto) {
-    const { q, p = 1, r = 10 } = query;
+  async findAll(query: GetToursDto) {
+    const {
+      q,
+      p = 1,
+      r = 10,
+      price_min,
+      price_max,
+      duration_range,
+      type,
+    } = query;
     const skip = (p - 1) * r;
 
-    const where = q
-      ? [{ title: Like(`%${q}%`) }, { description: Like(`%${q}%`) }]
-      : {};
+    const queryBuilder = this.toursRepository.createQueryBuilder('tour');
 
-    const [data, total] = await this.toursRepository.findAndCount({
-      where,
-      skip,
-      take: r,
-      order: { created_at: 'DESC' },
-    });
+    if (q) {
+      queryBuilder.andWhere(
+        '(tour.title LIKE :q OR tour.description LIKE :q)',
+        { q: `%${q}%` },
+      );
+    }
+
+    if (price_min) {
+      queryBuilder.andWhere('tour.price_usd >= :price_min', { price_min });
+    }
+
+    if (price_max) {
+      queryBuilder.andWhere('tour.price_usd <= :price_max', { price_max });
+    }
+
+    if (duration_range) {
+      switch (duration_range) {
+        case DurationRange.ONE_TO_THREE:
+          queryBuilder.andWhere('tour.duration_days BETWEEN 1 AND 3');
+          break;
+        case DurationRange.FOUR_TO_SEVEN:
+          queryBuilder.andWhere('tour.duration_days BETWEEN 4 AND 7');
+          break;
+        case DurationRange.EIGHT_PLUS:
+          queryBuilder.andWhere('tour.duration_days >= 8');
+          break;
+      }
+    }
+
+    if (type && type.length > 0) {
+      queryBuilder.andWhere('tour.type IN (:...type)', { type });
+    }
+
+    queryBuilder.orderBy('tour.created_at', 'DESC').skip(skip).take(r);
+
+    const [data, total] = await queryBuilder.getManyAndCount();
 
     return {
       data,
@@ -57,5 +94,35 @@ export class ToursService {
     return this.toursRepository.findOneBy({ id });
   }
 
-  // Add update and remove methods as needed
+  async update(
+    id: string,
+    updateTourDto: UpdateTourDto,
+    file?: Express.Multer.File,
+  ) {
+    const tour = await this.findOne(id);
+    if (!tour) {
+      throw new Error('Tour not found');
+    }
+
+    let thumbnailUrl = tour.thumbnail;
+    if (file) {
+      const uploadResult = await this.cloudinaryService.uploadImage(file);
+      thumbnailUrl = uploadResult.secure_url;
+    }
+
+    const updatedTour = this.toursRepository.merge(tour, {
+      ...updateTourDto,
+      thumbnail: thumbnailUrl,
+    });
+
+    return this.toursRepository.save(updatedTour);
+  }
+
+  async remove(id: string) {
+    const tour = await this.findOne(id);
+    if (!tour) {
+      throw new Error('Tour not found');
+    }
+    return this.toursRepository.remove(tour);
+  }
 }

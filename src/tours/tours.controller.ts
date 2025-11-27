@@ -17,8 +17,9 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ToursService } from './tours.service';
 import { CreateTourDto } from './dto/create-tour.dto';
-import { PaginationDto } from '../common/dto/pagination.dto';
-import { Query } from '@nestjs/common';
+import { UpdateTourDto } from './dto/update-tour.dto';
+import { GetToursDto } from './dto/get-tours.dto';
+import { Query, Patch, Delete } from '@nestjs/common';
 
 @ApiTags('tours')
 @Controller('tours')
@@ -28,7 +29,7 @@ export class ToursController {
   @Get()
   @ApiOperation({ summary: 'Get all tours' })
   @ApiResponse({ status: 200, description: 'Return all tours' })
-  findAll(@Query() query: PaginationDto) {
+  findAll(@Query() query: GetToursDto) {
     return this.toursService.findAll(query);
   }
 
@@ -57,5 +58,35 @@ export class ToursController {
     @UploadedFile() file: Express.Multer.File,
   ) {
     return this.toursService.create(createTourDto, file);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update a tour' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    description: 'Tour data to update',
+    type: UpdateTourDto,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'The tour has been successfully updated.',
+  })
+  @UseInterceptors(FileInterceptor('thumbnail'))
+  update(
+    @Param('id') id: string,
+    @Body() updateTourDto: UpdateTourDto,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.toursService.update(id, updateTourDto, file);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete a tour' })
+  @ApiResponse({
+    status: 200,
+    description: 'The tour has been successfully deleted.',
+  })
+  remove(@Param('id') id: string) {
+    return this.toursService.remove(id);
   }
 }

@@ -35,6 +35,9 @@ export class Tour {
   @Column()
   duration: string;
 
+  @Column('int', { default: 1 })
+  duration_days: number;
+
   @Column()
   depart_from: string;
 

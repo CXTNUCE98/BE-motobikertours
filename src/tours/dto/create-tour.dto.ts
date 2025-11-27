@@ -64,6 +64,11 @@ export class CreateTourDto {
   @IsString()
   duration: string;
 
+  @ApiProperty({ example: 5, description: 'Duration in days for filtering' })
+  @IsNumber()
+  @Transform(({ value }) => parseInt(value))
+  duration_days: number;
+
   @ApiProperty({ example: 'Hanoi', description: 'Starting city' })
   @IsString()
   depart_from: string;
