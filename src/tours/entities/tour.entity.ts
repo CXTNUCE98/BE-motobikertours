@@ -13,9 +13,6 @@ export class Tour {
   @Column()
   title: string;
 
-  @Column({ unique: true })
-  slug: string;
-
   @Column()
   thumbnail: string;
 
@@ -31,6 +28,9 @@ export class Tour {
 
   @Column('decimal')
   price_usd: number;
+
+  @Column('decimal', { default: 0 })
+  discount: number;
 
   @Column()
   duration: string;

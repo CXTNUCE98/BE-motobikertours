@@ -4,6 +4,7 @@ import {
   IsNumber,
   IsArray,
   IsEnum,
+  IsBoolean,
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
@@ -64,4 +65,17 @@ export class GetToursDto extends PaginationDto {
     return value;
   })
   depart_from?: string[];
+
+  @ApiPropertyOptional({
+    description: 'Filter by featured tours',
+    example: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => {
+    if (value === 'true' || value === true) return true;
+    if (value === 'false' || value === false) return false;
+    return value;
+  })
+  is_featured?: boolean;
 }

@@ -15,14 +15,6 @@ export class CreateTourDto {
   @IsString()
   title: string;
 
-  @ApiProperty({
-    example: 'amazing-vietnam-tour',
-    description: 'URL‑friendly slug',
-  })
-  @IsString()
-  @IsOptional()
-  slug: string;
-
   @ApiPropertyOptional({
     type: 'string',
     format: 'binary',
@@ -63,6 +55,12 @@ export class CreateTourDto {
   @Transform(({ value }) => parseFloat(value))
   price_usd: number;
 
+  @ApiPropertyOptional({ example: 10, description: 'Discount percentage' })
+  @IsOptional()
+  @IsNumber()
+  @Transform(({ value }) => (value !== undefined ? parseFloat(value) : 0))
+  discount?: number;
+
   @ApiProperty({ example: '5 days', description: 'Duration of the tour' })
   @IsString()
   duration: string;
@@ -92,6 +90,10 @@ export class CreateTourDto {
 
   @ApiProperty({ example: true, description: 'Featured tour flag' })
   @IsBoolean()
-  @Transform(({ value }) => value === 'true' || value === true)
+  @Transform(({ value }) => {
+    if (value === 'true' || value === true) return true;
+    if (value === 'false' || value === false) return false;
+    return Boolean(value);
+  })
   is_featured: boolean;
 }
