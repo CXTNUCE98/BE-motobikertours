@@ -4,9 +4,11 @@ import {
   IsArray,
   IsBoolean,
   IsOptional,
+  IsEnum,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { DurationRange } from './get-tours.dto';
 
 export class CreateTourDto {
   @ApiProperty({ example: 'Amazing Vietnam Tour', description: 'Tour title' })
@@ -18,6 +20,7 @@ export class CreateTourDto {
     description: 'URL‑friendly slug',
   })
   @IsString()
+  @IsOptional()
   slug: string;
 
   @ApiPropertyOptional({
@@ -64,10 +67,13 @@ export class CreateTourDto {
   @IsString()
   duration: string;
 
-  @ApiProperty({ example: 5, description: 'Duration in days for filtering' })
-  @IsNumber()
-  @Transform(({ value }) => parseInt(value))
-  duration_days: number;
+  @ApiProperty({
+    enum: DurationRange,
+    example: DurationRange.FOUR_TO_SEVEN,
+    description: 'Duration range for filtering (1-3, 4-7, 8+)',
+  })
+  @IsEnum(DurationRange)
+  duration_range: DurationRange;
 
   @ApiProperty({ example: 'Hanoi', description: 'Starting city' })
   @IsString()

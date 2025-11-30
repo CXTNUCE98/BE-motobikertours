@@ -13,19 +13,54 @@ export class ToursService {
     @InjectRepository(Tour)
     private toursRepository: Repository<Tour>,
     private cloudinaryService: CloudinaryService,
-  ) {}
+  ) { }
 
-  async create(createTourDto: CreateTourDto, file: Express.Multer.File) {
+  async create(
+    createTourDto: CreateTourDto,
+    files: { thumbnail?: Express.Multer.File[]; images?: Express.Multer.File[] },
+  ) {
     let thumbnailUrl = '';
-    if (file) {
-      const uploadResult = await this.cloudinaryService.uploadImage(file);
+    if (files?.thumbnail?.[0]) {
+      const uploadResult = await this.cloudinaryService.uploadImage(
+        files.thumbnail[0],
+      );
       thumbnailUrl = uploadResult.secure_url;
+    }
+
+    const imageUrls: string[] = [];
+    if (files?.images && files.images.length > 0) {
+      const uploadPromises = files.images.map((file) =>
+        this.cloudinaryService.uploadImage(file),
+      );
+      const uploadResults = await Promise.all(uploadPromises);
+      imageUrls.push(...uploadResults.map((result) => result.secure_url));
+    }
+
+    // Ensure createTourDto.images is an array (it might be a single string or undefined from multipart)
+    let dtoImages: string[] = [];
+    if (createTourDto.images) {
+      if (Array.isArray(createTourDto.images)) {
+        dtoImages = createTourDto.images;
+      } else {
+        dtoImages = [createTourDto.images];
+      }
+    }
+
+    let slug = createTourDto.slug;
+    if (!slug && createTourDto.title) {
+      slug = createTourDto.title
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/[\s_-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
     }
 
     const tour = this.toursRepository.create({
       ...createTourDto,
+      slug,
       thumbnail: thumbnailUrl,
-      images: createTourDto.images || [],
+      images: [...dtoImages, ...imageUrls],
     });
     return this.toursRepository.save(tour);
   }
@@ -39,6 +74,7 @@ export class ToursService {
       price_max,
       duration_range,
       type,
+      depart_from,
     } = query;
     const skip = (p - 1) * r;
 
@@ -60,21 +96,19 @@ export class ToursService {
     }
 
     if (duration_range) {
-      switch (duration_range) {
-        case DurationRange.ONE_TO_THREE:
-          queryBuilder.andWhere('tour.duration_days BETWEEN 1 AND 3');
-          break;
-        case DurationRange.FOUR_TO_SEVEN:
-          queryBuilder.andWhere('tour.duration_days BETWEEN 4 AND 7');
-          break;
-        case DurationRange.EIGHT_PLUS:
-          queryBuilder.andWhere('tour.duration_days >= 8');
-          break;
-      }
+      queryBuilder.andWhere('tour.duration_range = :duration_range', {
+        duration_range,
+      });
     }
 
     if (type && type.length > 0) {
       queryBuilder.andWhere('tour.type IN (:...type)', { type });
+    }
+
+    if (depart_from && depart_from.length > 0) {
+      queryBuilder.andWhere('tour.depart_from IN (:...depart_from)', {
+        depart_from,
+      });
     }
 
     queryBuilder.orderBy('tour.created_at', 'DESC').skip(skip).take(r);
@@ -97,23 +131,67 @@ export class ToursService {
   async update(
     id: string,
     updateTourDto: UpdateTourDto,
-    file?: Express.Multer.File,
+    files?: { thumbnail?: Express.Multer.File[]; images?: Express.Multer.File[] },
   ) {
+    console.log('Update tour called with:', { id, updateTourDto, files });
+
     const tour = await this.findOne(id);
     if (!tour) {
       throw new Error('Tour not found');
     }
 
     let thumbnailUrl = tour.thumbnail;
-    if (file) {
-      const uploadResult = await this.cloudinaryService.uploadImage(file);
+    if (files?.thumbnail?.[0]) {
+      const uploadResult = await this.cloudinaryService.uploadImage(
+        files.thumbnail[0],
+      );
       thumbnailUrl = uploadResult.secure_url;
     }
 
-    const updatedTour = this.toursRepository.merge(tour, {
-      ...updateTourDto,
-      thumbnail: thumbnailUrl,
+    const newImageUrls: string[] = [];
+    if (files?.images && files.images.length > 0) {
+      const uploadPromises = files.images.map((file) =>
+        this.cloudinaryService.uploadImage(file),
+      );
+      const uploadResults = await Promise.all(uploadPromises);
+      newImageUrls.push(...uploadResults.map((result) => result.secure_url));
+    }
+
+    // Handle images from DTO
+    let finalImages = tour.images; // Default: keep existing images
+
+    if (updateTourDto.images !== undefined) {
+      // If images field is explicitly provided in the DTO, use it
+      if (Array.isArray(updateTourDto.images)) {
+        finalImages = [...updateTourDto.images, ...newImageUrls];
+      } else if (typeof updateTourDto.images === 'string') {
+        finalImages = [updateTourDto.images, ...newImageUrls];
+      } else {
+        // If images is null or empty, reset to only new uploads
+        finalImages = newImageUrls;
+      }
+    } else if (newImageUrls.length > 0) {
+      // If no images in DTO but we have new uploads, append them
+      finalImages = [...tour.images, ...newImageUrls];
+    }
+
+    // Build update object, only including fields that are actually provided
+    const updateData: any = {};
+
+    // Only update fields that are explicitly provided in updateTourDto
+    Object.keys(updateTourDto).forEach(key => {
+      if (updateTourDto[key] !== undefined && key !== 'images') {
+        updateData[key] = updateTourDto[key];
+      }
     });
+
+    // Always set thumbnail and images
+    updateData.thumbnail = thumbnailUrl;
+    updateData.images = finalImages;
+
+    console.log('Update data:', updateData);
+
+    const updatedTour = this.toursRepository.merge(tour, updateData);
 
     return this.toursRepository.save(updatedTour);
   }

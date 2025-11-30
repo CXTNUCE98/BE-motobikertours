@@ -49,4 +49,19 @@ export class GetToursDto extends PaginationDto {
     return value;
   })
   type?: string[];
+
+  @ApiPropertyOptional({
+    description: 'Filter by departure city (comma separated)',
+    example: 'Hanoi,Da Nang',
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return value.split(',').map((v) => v.trim());
+    }
+    return value;
+  })
+  depart_from?: string[];
 }

@@ -25,6 +25,7 @@ API này hỗ trợ đầy đủ các bộ lọc theo UI: Khoảng giá, Thời 
 | `price_max`      | `number`        | Giá cao nhất (từ thanh trượt giá).                               | `2000`              |
 | `duration_range` | `string`        | Khoảng thời gian (enum). Các giá trị hợp lệ: `1-3`, `4-7`, `8+`. | `1-3`               |
 | `type`           | `array[string]` | Loại tour. Có thể truyền nhiều loại cách nhau bởi dấu phẩy.      | `Adventure,Culture` |
+| `depart_from`    | `array[string]` | Điểm khởi hành. Có thể truyền nhiều điểm cách nhau bởi dấu phẩy. | `Hanoi,Da Nang`     |
 | `p`              | `number`        | Trang hiện tại (mặc định: 1).                                    | `1`                 |
 | `r`              | `number`        | Số lượng tour mỗi trang (mặc định: 10).                          | `9`                 |
 
@@ -41,10 +42,11 @@ API này hỗ trợ đầy đủ các bộ lọc theo UI: Khoảng giá, Thời 
    - Giá: $100 - $500
    - Thời gian: 1-3 ngày
    - Loại tour: Adventure và Culture
+   - Điểm khởi hành: Hanoi và Da Nang
    - Trang 1, 9 tour/trang (lưới 3x3)
 
    ```
-   GET /tours?q=Da%20Nang&price_min=100&price_max=500&duration_range=1-3&type=Adventure,Culture&p=1&r=9
+   GET /tours?q=Da%20Nang&price_min=100&price_max=500&duration_range=1-3&type=Adventure,Culture&depart_from=Hanoi,Da%20Nang&p=1&r=9
    ```
 
 #### Cấu trúc Response
@@ -61,7 +63,7 @@ API này hỗ trợ đầy đủ các bộ lọc theo UI: Khoảng giá, Thời 
       "description": "Short description...",
       "price_usd": 320,
       "duration": "3 days and 2 nights",
-      "duration_days": 3,
+      "duration_range": "1-3",
       "depart_from": "Da Nang",
       "routes": "Da Nang - Hai Van Pass - Hue - Hoi An",
       "type": "Heritage",
@@ -111,6 +113,7 @@ export const fetchTours = async (filters) => {
     //   priceRange: [0, 2000],
     //   duration: '1-3', // hoặc null
     //   selectedTypes: ['Adventure', 'Culture'],
+    //   departFrom: ['Hanoi', 'Da Nang'],
     //   page: 1
     // }
 
@@ -135,6 +138,10 @@ export const fetchTours = async (filters) => {
       params.type = filters.selectedTypes.join(',');
     }
 
+    if (filters.departFrom && filters.departFrom.length > 0) {
+      params.depart_from = filters.departFrom.join(',');
+    }
+
     const response = await axios.get('/tours', { params });
     return response.data;
   } catch (error) {
@@ -148,4 +155,5 @@ export const fetchTours = async (filters) => {
 
 1. **Duration Range**: Giá trị gửi lên server phải chính xác là `1-3`, `4-7`, hoặc `8+`.
 2. **Type**: Nếu chọn nhiều loại, hãy nối chúng bằng dấu phẩy (ví dụ: `type=Bien,Nui`).
-3. **Hình ảnh**: API trả về `thumbnail` (ảnh đại diện) và `images` (mảng ảnh chi tiết). Hãy dùng `thumbnail` cho card ở trang danh sách.
+3. **Depart From**: Nếu chọn nhiều điểm khởi hành, hãy nối chúng bằng dấu phẩy (ví dụ: `depart_from=Hanoi,Da Nang`).
+4. **Hình ảnh**: API trả về `thumbnail` (ảnh đại diện) và `images` (mảng ảnh chi tiết). Hãy dùng `thumbnail` cho card ở trang danh sách.

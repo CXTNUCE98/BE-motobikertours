@@ -4,7 +4,7 @@ import {
   Post,
   Body,
   UseInterceptors,
-  UploadedFile,
+  UploadedFiles,
   Param,
 } from '@nestjs/common';
 import {
@@ -14,7 +14,7 @@ import {
   ApiConsumes,
   ApiBody,
 } from '@nestjs/swagger';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { ToursService } from './tours.service';
 import { CreateTourDto } from './dto/create-tour.dto';
 import { UpdateTourDto } from './dto/update-tour.dto';
@@ -24,7 +24,7 @@ import { Query, Patch, Delete } from '@nestjs/common';
 @ApiTags('tours')
 @Controller('tours')
 export class ToursController {
-  constructor(private readonly toursService: ToursService) {}
+  constructor(private readonly toursService: ToursService) { }
 
   @Get()
   @ApiOperation({ summary: 'Get all tours' })
@@ -45,39 +45,51 @@ export class ToursController {
   @ApiOperation({ summary: 'Create a new tour' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
-    description: 'Tour data with thumbnail image',
+    description: 'Tour data with thumbnail and images',
     type: CreateTourDto,
   })
   @ApiResponse({
     status: 201,
     description: 'The tour has been successfully created.',
   })
-  @UseInterceptors(FileInterceptor('thumbnail'))
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'thumbnail', maxCount: 1 },
+      { name: 'images', maxCount: 10 },
+    ]),
+  )
   create(
     @Body() createTourDto: CreateTourDto,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFiles()
+    files: { thumbnail?: Express.Multer.File[]; images?: Express.Multer.File[] },
   ) {
-    return this.toursService.create(createTourDto, file);
+    return this.toursService.create(createTourDto, files);
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Update a tour' })
-  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Update a tour (supports both JSON and multipart/form-data)' })
+  @ApiConsumes('multipart/form-data', 'application/json')
   @ApiBody({
-    description: 'Tour data to update',
+    description: 'Tour data to update (JSON or form-data)',
     type: UpdateTourDto,
   })
   @ApiResponse({
     status: 200,
     description: 'The tour has been successfully updated.',
   })
-  @UseInterceptors(FileInterceptor('thumbnail'))
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'thumbnail', maxCount: 1 },
+      { name: 'images', maxCount: 10 },
+    ]),
+  )
   update(
     @Param('id') id: string,
     @Body() updateTourDto: UpdateTourDto,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFiles()
+    files?: { thumbnail?: Express.Multer.File[]; images?: Express.Multer.File[] },
   ) {
-    return this.toursService.update(id, updateTourDto, file);
+    return this.toursService.update(id, updateTourDto, files);
   }
 
   @Delete(':id')
