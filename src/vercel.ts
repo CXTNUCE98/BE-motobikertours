@@ -66,6 +66,11 @@ const bootstrap = async () => {
         ],
       });
 
+      // Add JSON endpoint for API documentation
+      app.use('/api-docs-json', (req, res) => {
+        res.json(document);
+      });
+
       await app.init();
       console.log('NestJS App Initialized successfully');
     } catch (error) {
