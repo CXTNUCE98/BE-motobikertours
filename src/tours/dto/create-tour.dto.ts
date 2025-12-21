@@ -83,9 +83,10 @@ export class CreateTourDto {
   @IsString()
   routes: string;
 
-  @ApiProperty({ example: 'Adventure', description: 'Tour type/category' })
-  @IsString()
-  type: string;
+  @ApiProperty({ example: ['Adventure', 'Nature'], description: 'Tour type/category' })
+  @IsArray()
+  @IsString({ each: true })
+  type: string[];
 
   @ApiProperty({ example: true, description: 'Featured tour flag' })
   @IsBoolean()

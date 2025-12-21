@@ -44,8 +44,8 @@ export class Tour {
   @Column()
   routes: string;
 
-  @Column()
-  type: string;
+  @Column('simple-array')
+  type: string[];
 
   @Column({ default: false })
   is_featured: boolean;

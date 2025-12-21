@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Brackets } from 'typeorm';
 import { Tour } from './entities/tour.entity';
 import { CreateTourDto } from './dto/create-tour.dto';
 import { UpdateTourDto } from './dto/update-tour.dto';
@@ -57,7 +57,14 @@ export class ToursService {
     }
 
     if (type && type.length > 0) {
-      queryBuilder.andWhere('tour.type IN (:...type)', { type });
+      queryBuilder.andWhere(
+        new Brackets((qb) => {
+          type.forEach((t, index) => {
+            const paramName = `type_${index}`;
+            qb.orWhere(`tour.type LIKE :${paramName}`, { [paramName]: `%${t}%` });
+          });
+        }),
+      );
     }
 
     if (depart_from && depart_from.length > 0) {
