@@ -15,13 +15,12 @@ export class CreateTourDto {
   @IsString()
   title: string;
 
-  @ApiPropertyOptional({
-    type: 'string',
-    format: 'binary',
-    description: 'Thumbnail image file',
+  @ApiProperty({
+    example: 'https://res.cloudinary.com/.../thumb.jpg',
+    description: 'Thumbnail image URL',
   })
-  @IsOptional()
-  thumbnail: any;
+  @IsString()
+  thumbnail: string;
 
   @ApiPropertyOptional({
     example: [

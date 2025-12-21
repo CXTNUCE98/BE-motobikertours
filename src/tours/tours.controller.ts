@@ -3,18 +3,14 @@ import {
   Get,
   Post,
   Body,
-  UseInterceptors,
-  UploadedFiles,
   Param,
 } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
-  ApiConsumes,
   ApiBody,
 } from '@nestjs/swagger';
-import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { ToursService } from './tours.service';
 import { CreateTourDto } from './dto/create-tour.dto';
 import { UpdateTourDto } from './dto/update-tour.dto';
@@ -43,7 +39,6 @@ export class ToursController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new tour' })
-  @ApiConsumes('multipart/form-data')
   @ApiBody({
     description: 'Tour data with thumbnail and images',
     type: CreateTourDto,
@@ -52,44 +47,22 @@ export class ToursController {
     status: 201,
     description: 'The tour has been successfully created.',
   })
-  @UseInterceptors(
-    FileFieldsInterceptor([
-      { name: 'thumbnail', maxCount: 1 },
-      { name: 'images', maxCount: 10 },
-    ]),
-  )
-  create(
-    @Body() createTourDto: CreateTourDto,
-    @UploadedFiles()
-    files: { thumbnail?: Express.Multer.File[]; images?: Express.Multer.File[] },
-  ) {
-    return this.toursService.create(createTourDto, files);
+  create(@Body() createTourDto: CreateTourDto) {
+    return this.toursService.create(createTourDto);
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Update a tour (supports both JSON and multipart/form-data)' })
-  @ApiConsumes('multipart/form-data', 'application/json')
+  @ApiOperation({ summary: 'Update a tour' })
   @ApiBody({
-    description: 'Tour data to update (JSON or form-data)',
+    description: 'Tour data to update',
     type: UpdateTourDto,
   })
   @ApiResponse({
     status: 200,
     description: 'The tour has been successfully updated.',
   })
-  @UseInterceptors(
-    FileFieldsInterceptor([
-      { name: 'thumbnail', maxCount: 1 },
-      { name: 'images', maxCount: 10 },
-    ]),
-  )
-  update(
-    @Param('id') id: string,
-    @Body() updateTourDto: UpdateTourDto,
-    @UploadedFiles()
-    files?: { thumbnail?: Express.Multer.File[]; images?: Express.Multer.File[] },
-  ) {
-    return this.toursService.update(id, updateTourDto, files);
+  update(@Param('id') id: string, @Body() updateTourDto: UpdateTourDto) {
+    return this.toursService.update(id, updateTourDto);
   }
 
   @Delete(':id')

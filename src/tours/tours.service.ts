@@ -5,54 +5,16 @@ import { Tour } from './entities/tour.entity';
 import { CreateTourDto } from './dto/create-tour.dto';
 import { UpdateTourDto } from './dto/update-tour.dto';
 import { GetToursDto } from './dto/get-tours.dto';
-import { CloudinaryService } from '../cloudinary/cloudinary.service';
-
 @Injectable()
 export class ToursService {
   constructor(
     @InjectRepository(Tour)
     private toursRepository: Repository<Tour>,
-    private cloudinaryService: CloudinaryService,
-  ) {}
+  ) { }
 
-  async create(
-    createTourDto: CreateTourDto,
-    files: {
-      thumbnail?: Express.Multer.File[];
-      images?: Express.Multer.File[];
-    },
-  ) {
-    let thumbnailUrl = '';
-    if (files?.thumbnail?.[0]) {
-      const uploadResult = await this.cloudinaryService.uploadImage(
-        files.thumbnail[0],
-      );
-      thumbnailUrl = uploadResult.secure_url;
-    }
-
-    const imageUrls: string[] = [];
-    if (files?.images && files.images.length > 0) {
-      const uploadPromises = files.images.map((file) =>
-        this.cloudinaryService.uploadImage(file),
-      );
-      const uploadResults = await Promise.all(uploadPromises);
-      imageUrls.push(...uploadResults.map((result) => result.secure_url));
-    }
-
-    // Ensure createTourDto.images is an array (it might be a single string or undefined from multipart)
-    let dtoImages: string[] = [];
-    if (createTourDto.images) {
-      if (Array.isArray(createTourDto.images)) {
-        dtoImages = createTourDto.images;
-      } else {
-        dtoImages = [createTourDto.images];
-      }
-    }
-
+  async create(createTourDto: CreateTourDto) {
     const tour = this.toursRepository.create({
       ...createTourDto,
-      thumbnail: thumbnailUrl,
-      images: [...dtoImages, ...imageUrls],
     });
     return this.toursRepository.save(tour);
   }
@@ -127,113 +89,13 @@ export class ToursService {
     return this.toursRepository.findOneBy({ id });
   }
 
-  async update(
-    id: string,
-    updateTourDto: UpdateTourDto,
-    files?: {
-      thumbnail?: Express.Multer.File[];
-      images?: Express.Multer.File[];
-    },
-  ) {
-    console.log('Update tour called with:', { id, updateTourDto, files });
-    console.log(
-      'is_featured in DTO:',
-      updateTourDto.is_featured,
-      'type:',
-      typeof updateTourDto.is_featured,
-    );
-
+  async update(id: string, updateTourDto: UpdateTourDto) {
     const tour = await this.findOne(id);
     if (!tour) {
       throw new Error('Tour not found');
     }
 
-    let thumbnailUrl = tour.thumbnail;
-    if (files?.thumbnail?.[0]) {
-      const uploadResult = await this.cloudinaryService.uploadImage(
-        files.thumbnail[0],
-      );
-      thumbnailUrl = uploadResult.secure_url;
-    }
-
-    const newImageUrls: string[] = [];
-    if (files?.images && files.images.length > 0) {
-      const uploadPromises = files.images.map((file) =>
-        this.cloudinaryService.uploadImage(file),
-      );
-      const uploadResults = await Promise.all(uploadPromises);
-      newImageUrls.push(...uploadResults.map((result) => result.secure_url));
-    }
-
-    // Handle images from DTO
-    let finalImages = tour.images; // Default: keep existing images
-
-    if (updateTourDto.images !== undefined) {
-      // If images field is explicitly provided in the DTO, use it
-      if (Array.isArray(updateTourDto.images)) {
-        finalImages = [...updateTourDto.images, ...newImageUrls];
-      } else if (typeof updateTourDto.images === 'string') {
-        finalImages = [updateTourDto.images, ...newImageUrls];
-      } else {
-        // If images is null or empty, reset to only new uploads
-        finalImages = newImageUrls;
-      }
-    } else if (newImageUrls.length > 0) {
-      // If no images in DTO but we have new uploads, append them
-      finalImages = [...tour.images, ...newImageUrls];
-    }
-
-    // Build update object, only including fields that are actually provided
-    const updateData: any = {};
-
-    // Only update fields that are explicitly provided in updateTourDto
-    Object.keys(updateTourDto).forEach((key) => {
-      if (
-        updateTourDto[key] !== undefined &&
-        key !== 'images' &&
-        key !== 'is_featured'
-      ) {
-        updateData[key] = updateTourDto[key];
-      }
-    });
-
-    // Explicitly handle is_featured to ensure false values are properly set
-    // Handle both string and boolean values from form-data
-    if ('is_featured' in updateTourDto) {
-      const isFeaturedValue = updateTourDto.is_featured;
-      console.log(
-        'is_featured value received:',
-        isFeaturedValue,
-        'type:',
-        typeof isFeaturedValue,
-      );
-
-      if (typeof isFeaturedValue === 'string') {
-        // Handle string values: 'true', 'false', '1', '0', etc.
-        const normalizedValue = String(isFeaturedValue).toLowerCase().trim();
-        updateData.is_featured =
-          normalizedValue === 'true' ||
-          normalizedValue === '1' ||
-          normalizedValue === 'yes';
-        console.log('Converted string to boolean:', updateData.is_featured);
-      } else if (typeof isFeaturedValue === 'boolean') {
-        updateData.is_featured = isFeaturedValue;
-        console.log('Boolean value used as-is:', updateData.is_featured);
-      } else {
-        // Fallback: convert to boolean
-        updateData.is_featured = Boolean(isFeaturedValue);
-        console.log('Converted to boolean:', updateData.is_featured);
-      }
-    }
-
-    // Always set thumbnail and images
-    updateData.thumbnail = thumbnailUrl;
-    updateData.images = finalImages;
-
-    console.log('Update data:', updateData);
-
-    const updatedTour = this.toursRepository.merge(tour, updateData);
-
+    const updatedTour = this.toursRepository.merge(tour, updateTourDto);
     return this.toursRepository.save(updatedTour);
   }
 
