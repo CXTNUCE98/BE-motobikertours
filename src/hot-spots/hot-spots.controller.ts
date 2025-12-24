@@ -13,9 +13,12 @@ import { CreateHotSpotDto } from './dto/create-hot-spot.dto';
 import { UpdateHotSpotDto } from './dto/update-hot-spot.dto';
 import { GetHotSpotsDto } from './dto/get-hot-spots.dto';
 
+import { ApiTags } from '@nestjs/swagger';
+
+@ApiTags('Hot spots')
 @Controller('hot-spots')
 export class HotSpotsController {
-  constructor(private readonly hotSpotsService: HotSpotsService) {}
+  constructor(private readonly hotSpotsService: HotSpotsService) { }
 
   @Post()
   executeCreate(@Body() createHotSpotDto: CreateHotSpotDto) {
