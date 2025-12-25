@@ -3,7 +3,12 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  OneToMany,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
+import { TourItinerary } from './tour-itinerary.entity';
+import { Vehicle } from '../../vehicles/entities/vehicle.entity';
 
 @Entity()
 export class Tour {
@@ -49,6 +54,18 @@ export class Tour {
 
   @Column({ default: false })
   is_featured: boolean;
+
+  @OneToMany(() => TourItinerary, (itinerary) => itinerary.tour, {
+    cascade: true,
+  })
+  itineraries: TourItinerary[];
+
+  @ManyToOne(() => Vehicle, { nullable: true })
+  @JoinColumn({ name: 'suggested_vehicle_id' })
+  suggested_vehicle: Vehicle;
+
+  @Column({ nullable: true })
+  suggested_vehicle_id: string;
 
   @CreateDateColumn()
   created_at: Date;

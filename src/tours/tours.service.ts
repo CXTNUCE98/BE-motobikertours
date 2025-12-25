@@ -1,21 +1,35 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Brackets } from 'typeorm';
 import { Tour } from './entities/tour.entity';
 import { CreateTourDto } from './dto/create-tour.dto';
 import { UpdateTourDto } from './dto/update-tour.dto';
 import { GetToursDto } from './dto/get-tours.dto';
+import { EstimateTourDto } from './dto/estimate-tour.dto';
+import { OsrmRouterService } from './osrm-router.service';
+import { HotSpotsService } from '../hot-spots/hot-spots.service';
+import { VehiclesService } from '../vehicles/vehicles.service';
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 @Injectable()
 export class ToursService {
   constructor(
     @InjectRepository(Tour)
     private toursRepository: Repository<Tour>,
-  ) { }
+    private readonly osrmService: OsrmRouterService,
+    private readonly hotSpotsService: HotSpotsService,
+    private readonly vehiclesService: VehiclesService,
+  ) {}
 
   async create(createTourDto: CreateTourDto) {
-    const tour = this.toursRepository.create({
-      ...createTourDto,
-    });
+    const { itineraries, ...tourData } = createTourDto;
+    const tour = this.toursRepository.create(tourData);
+
+    if (itineraries) {
+      tour.itineraries = itineraries.map((item, index) => ({
+        ...item,
+        order: index + 1,
+      })) as any;
+    }
+
     return this.toursRepository.save(tour);
   }
 
@@ -61,7 +75,9 @@ export class ToursService {
         new Brackets((qb) => {
           type.forEach((t, index) => {
             const paramName = `type_${index}`;
-            qb.orWhere(`tour.type LIKE :${paramName}`, { [paramName]: `%${t}%` });
+            qb.orWhere(`tour.type LIKE :${paramName}`, {
+              [paramName]: `%${t}%`,
+            });
           });
         }),
       );
@@ -79,7 +95,14 @@ export class ToursService {
       });
     }
 
-    queryBuilder.orderBy('tour.created_at', 'DESC').skip(skip).take(r);
+    queryBuilder
+      .leftJoinAndSelect('tour.itineraries', 'itinerary')
+      .leftJoinAndSelect('itinerary.hot_spot', 'hot_spot')
+      .leftJoinAndSelect('tour.suggested_vehicle', 'vehicle')
+      .orderBy('tour.created_at', 'DESC')
+      .addOrderBy('itinerary.order', 'ASC')
+      .skip(skip)
+      .take(r);
 
     const [data, total] = await queryBuilder.getManyAndCount();
 
@@ -93,17 +116,75 @@ export class ToursService {
   }
 
   findOne(id: string) {
-    return this.toursRepository.findOneBy({ id });
+    return this.toursRepository.findOne({
+      where: { id },
+      relations: ['itineraries', 'itineraries.hot_spot', 'suggested_vehicle'],
+      order: {
+        itineraries: {
+          order: 'ASC',
+        },
+      },
+    });
   }
 
   async update(id: string, updateTourDto: UpdateTourDto) {
+    const { itineraries, ...tourData } = updateTourDto;
     const tour = await this.findOne(id);
     if (!tour) {
       throw new Error('Tour not found');
     }
 
-    const updatedTour = this.toursRepository.merge(tour, updateTourDto);
+    if (itineraries) {
+      // Simple strategy: Clear old itineraries and re-create
+      // In a real production app, we should use a more sophisticated approach
+      tour.itineraries = itineraries.map((item, index) => ({
+        ...item,
+        order: index + 1,
+      })) as any;
+    }
+
+    const updatedTour = this.toursRepository.merge(tour, tourData);
     return this.toursRepository.save(updatedTour);
+  }
+
+  async estimate(estimateDto: EstimateTourDto) {
+    const { hot_spot_ids, vehicle_id } = estimateDto;
+
+    // 1. Lấy thông tin Hot Spots và Vehicle
+    const hotSpots = await Promise.all(
+      hot_spot_ids.map((id) => this.hotSpotsService.executeFindOne(id)),
+    );
+    const vehicle = await this.vehiclesService.findOne(vehicle_id);
+
+    if (!vehicle) {
+      throw new Error('Vehicle not found');
+    }
+
+    // 2. Lấy tọa độ để tính toán lộ trình
+    const coordinates: [number, number][] = hotSpots.map((spot) => [
+      Number(spot.lng),
+      Number(spot.lat),
+    ]);
+
+    // 3. Gọi OSRM API
+    const route = await this.osrmService.calculateRoute(coordinates);
+
+    // 4. Tính toán giá tiền
+    // Giá = (Tiền xe/km * Quãng đường) + Phí dịch vụ cố định (ví dụ 10 USD)
+    const basePrice = Number(vehicle.price_per_km) * route.distance;
+    const serviceFee = 10;
+    const total_usd = Math.round((basePrice + serviceFee) * 100) / 100;
+
+    return {
+      ...route,
+      vehicle: {
+        id: vehicle.id,
+        model: vehicle.model,
+        price_per_km: vehicle.price_per_km,
+      },
+      price_estimate_usd: total_usd,
+      currency: 'USD',
+    };
   }
 
   async remove(id: string) {

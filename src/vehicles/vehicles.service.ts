@@ -1,0 +1,50 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Vehicle } from './entities/vehicle.entity';
+import { CreateVehicleDto } from './dto/create-vehicle.dto';
+import { UpdateVehicleDto } from './dto/update-vehicle.dto';
+
+@Injectable()
+export class VehiclesService {
+  constructor(
+    @InjectRepository(Vehicle)
+    private readonly vehiclesRepository: Repository<Vehicle>,
+  ) {}
+
+  async create(createVehicleDto: CreateVehicleDto): Promise<Vehicle> {
+    const vehicle = this.vehiclesRepository.create(createVehicleDto);
+    return await this.vehiclesRepository.save(vehicle);
+  }
+
+  async findAll(): Promise<Vehicle[]> {
+    return await this.vehiclesRepository.find({
+      order: { created_at: 'DESC' },
+    });
+  }
+
+  async findOne(id: string): Promise<Vehicle> {
+    const vehicle = await this.vehiclesRepository.findOneBy({ id });
+    if (!vehicle) {
+      throw new NotFoundException(`Vehicle with ID ${id} not found`);
+    }
+    return vehicle;
+  }
+
+  async update(
+    id: string,
+    updateVehicleDto: UpdateVehicleDto,
+  ): Promise<Vehicle> {
+    const vehicle = await this.findOne(id);
+    const updatedVehicle = this.vehiclesRepository.merge(
+      vehicle,
+      updateVehicleDto,
+    );
+    return await this.vehiclesRepository.save(updatedVehicle);
+  }
+
+  async remove(id: string): Promise<void> {
+    const vehicle = await this.findOne(id);
+    await this.vehiclesRepository.remove(vehicle);
+  }
+}

@@ -1,26 +1,17 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBody,
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { ToursService } from './tours.service';
 import { CreateTourDto } from './dto/create-tour.dto';
 import { UpdateTourDto } from './dto/update-tour.dto';
 import { GetToursDto } from './dto/get-tours.dto';
+import { EstimateTourDto } from './dto/estimate-tour.dto';
+
 import { Query, Patch, Delete } from '@nestjs/common';
 
 @ApiTags('tours')
 @Controller('tours')
 export class ToursController {
-  constructor(private readonly toursService: ToursService) { }
+  constructor(private readonly toursService: ToursService) {}
 
   @Get()
   @ApiOperation({ summary: 'Get all tours' })
@@ -63,6 +54,14 @@ export class ToursController {
   })
   update(@Param('id') id: string, @Body() updateTourDto: UpdateTourDto) {
     return this.toursService.update(id, updateTourDto);
+  }
+
+  @Post('estimate')
+  @ApiOperation({ summary: 'Calculate estimated price and route' })
+  @ApiBody({ type: EstimateTourDto })
+  @ApiResponse({ status: 200, description: 'Return estimation' })
+  estimate(@Body() estimateDto: EstimateTourDto) {
+    return this.toursService.estimate(estimateDto);
   }
 
   @Delete(':id')

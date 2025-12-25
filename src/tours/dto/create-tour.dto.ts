@@ -8,7 +8,30 @@ import {
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { ValidateNested } from 'class-validator';
 import { DurationRange } from './get-tours.dto';
+
+export class ItineraryDto {
+  @ApiProperty({ description: 'UUID of the hot spot' })
+  @IsString()
+  hot_spot_id: string;
+
+  @ApiPropertyOptional({ description: 'Order of specific activity' })
+  @IsNumber()
+  @IsOptional()
+  order?: number;
+
+  @ApiPropertyOptional({ description: 'Description of what to do here' })
+  @IsString()
+  @IsOptional()
+  activity_description?: string;
+
+  @ApiPropertyOptional({ description: 'Estimated time spent in minutes' })
+  @IsNumber()
+  @IsOptional()
+  duration_minutes?: number;
+}
 
 export class CreateTourDto {
   @ApiProperty({ example: 'Amazing Vietnam Tour', description: 'Tour title' })
@@ -83,7 +106,10 @@ export class CreateTourDto {
   @IsString()
   routes: string;
 
-  @ApiProperty({ example: ['Adventure', 'Nature'], description: 'Tour type/category' })
+  @ApiProperty({
+    example: ['Adventure', 'Nature'],
+    description: 'Tour type/category',
+  })
   @IsArray()
   @IsString({ each: true })
   type: string[];
@@ -96,4 +122,19 @@ export class CreateTourDto {
     return Boolean(value);
   })
   is_featured: boolean;
+
+  @ApiPropertyOptional({
+    type: [ItineraryDto],
+    description: 'List of itinerary items',
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ItineraryDto)
+  itineraries?: ItineraryDto[];
+
+  @ApiPropertyOptional({ description: 'Recommended vehicle for this tour' })
+  @IsString()
+  @IsOptional()
+  suggested_vehicle_id?: string;
 }

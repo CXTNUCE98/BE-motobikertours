@@ -17,6 +17,9 @@ import { BlogPost } from './blog/entities/blog-post.entity';
 import { Comment, CommentLike } from './comments/entities/comment.entity';
 import { HotSpot } from './hot-spots/entities/hot-spot.entity';
 import { HotSpotsModule } from './hot-spots/hot-spots.module';
+import { VehiclesModule } from './vehicles/vehicles.module';
+import { Vehicle } from './vehicles/entities/vehicle.entity';
+import { TourItinerary } from './tours/entities/tour-itinerary.entity';
 
 @Module({
   imports: [
@@ -32,7 +35,10 @@ import { HotSpotsModule } from './hot-spots/hot-spots.module';
           Comment,
           CommentLike,
           HotSpot,
+          Vehicle,
+          TourItinerary,
         ];
+
         const nodeEnv = configService.get<string>('NODE_ENV', 'development');
         const isProduction = nodeEnv === 'production';
         const dbSyncConfig = configService.get<string>('DB_SYNCHRONIZE');
@@ -130,6 +136,7 @@ import { HotSpotsModule } from './hot-spots/hot-spots.module';
     UsersModule,
     CommentsModule,
     HotSpotsModule,
+    VehiclesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
