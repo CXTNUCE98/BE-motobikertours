@@ -20,6 +20,10 @@ import { HotSpotsModule } from './hot-spots/hot-spots.module';
 import { VehiclesModule } from './vehicles/vehicles.module';
 import { Vehicle } from './vehicles/entities/vehicle.entity';
 import { TourItinerary } from './tours/entities/tour-itinerary.entity';
+import { Review } from './reviews/entities/review.entity';
+import { ReviewsModule } from './reviews/reviews.module';
+import { Wishlist } from './wishlist/entities/wishlist.entity';
+import { WishlistModule } from './wishlist/wishlist.module';
 
 @Module({
   imports: [
@@ -37,6 +41,8 @@ import { TourItinerary } from './tours/entities/tour-itinerary.entity';
           HotSpot,
           Vehicle,
           TourItinerary,
+          Review,
+          Wishlist,
         ];
 
         const nodeEnv = configService.get<string>('NODE_ENV', 'development');
@@ -137,6 +143,8 @@ import { TourItinerary } from './tours/entities/tour-itinerary.entity';
     CommentsModule,
     HotSpotsModule,
     VehiclesModule,
+    ReviewsModule,
+    WishlistModule,
   ],
   controllers: [AppController],
   providers: [AppService],

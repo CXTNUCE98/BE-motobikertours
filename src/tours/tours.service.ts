@@ -25,8 +25,10 @@ export class ToursService {
 
     if (itineraries) {
       tour.itineraries = itineraries.map((item, index) => ({
-        ...item,
-        order: index + 1,
+        activity_description: item.activity_description,
+        duration_minutes: item.duration_minutes,
+        hot_spot: { id: item.hot_spot_id },
+        order: item.order || index + 1,
       })) as any;
     }
 
@@ -99,12 +101,40 @@ export class ToursService {
       .leftJoinAndSelect('tour.itineraries', 'itinerary')
       .leftJoinAndSelect('itinerary.hot_spot', 'hot_spot')
       .leftJoinAndSelect('tour.suggested_vehicle', 'vehicle')
+      .leftJoinAndSelect('tour.reviews', 'review')
       .orderBy('tour.created_at', 'DESC')
       .addOrderBy('itinerary.order', 'ASC')
       .skip(skip)
       .take(r);
 
-    const [data, total] = await queryBuilder.getManyAndCount();
+    const [tours, total] = await queryBuilder.getManyAndCount();
+
+    const data = tours.map((tour) => {
+      const breakdown = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+      const totalReviews = tour.reviews?.length || 0;
+      let sum = 0;
+      if (tour.reviews) {
+        tour.reviews.forEach((r) => {
+          sum += r.rating;
+          const star = Math.round(r.rating);
+          if (star >= 1 && star <= 5) {
+            breakdown[star]++;
+          }
+        });
+      }
+
+      const averageRating =
+        totalReviews > 0 ? parseFloat((sum / totalReviews).toFixed(1)) : 0;
+      const { reviews: _reviews, ...tourWithoutReviews } = tour;
+      return {
+        ...tourWithoutReviews,
+        rating_stats: {
+          average_rating: averageRating,
+          total_reviews: totalReviews,
+          breakdown,
+        },
+      };
+    });
 
     return {
       data,
@@ -115,35 +145,71 @@ export class ToursService {
     };
   }
 
-  findOne(id: string) {
-    return this.toursRepository.findOne({
+  async findOne(id: string) {
+    const tour = await this.toursRepository.findOne({
       where: { id },
-      relations: ['itineraries', 'itineraries.hot_spot', 'suggested_vehicle'],
+      relations: [
+        'itineraries',
+        'itineraries.hot_spot',
+        'suggested_vehicle',
+        'reviews',
+        'reviews.user',
+      ],
       order: {
         itineraries: {
           order: 'ASC',
         },
+        reviews: {
+          created_at: 'DESC',
+        },
       },
     });
+
+    if (!tour) return null;
+
+    const breakdown = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    const totalReviews = tour.reviews?.length || 0;
+    let sum = 0;
+    if (tour.reviews) {
+      tour.reviews.forEach((r) => {
+        sum += r.rating;
+        const star = Math.round(r.rating);
+        if (star >= 1 && star <= 5) {
+          breakdown[star]++;
+        }
+      });
+    }
+
+    const averageRating =
+      totalReviews > 0 ? parseFloat((sum / totalReviews).toFixed(1)) : 0;
+
+    return {
+      ...tour,
+      rating_stats: {
+        average_rating: averageRating,
+        total_reviews: totalReviews,
+        breakdown,
+      },
+    };
   }
 
   async update(id: string, updateTourDto: UpdateTourDto) {
     const { itineraries, ...tourData } = updateTourDto;
-    const tour = await this.findOne(id);
-    if (!tour) {
+    const existingTour = await this.toursRepository.findOne({ where: { id } });
+    if (!existingTour) {
       throw new Error('Tour not found');
     }
 
     if (itineraries) {
-      // Simple strategy: Clear old itineraries and re-create
-      // In a real production app, we should use a more sophisticated approach
-      tour.itineraries = itineraries.map((item, index) => ({
-        ...item,
-        order: index + 1,
+      existingTour.itineraries = itineraries.map((item, index) => ({
+        activity_description: item.activity_description,
+        duration_minutes: item.duration_minutes,
+        hot_spot: { id: item.hot_spot_id },
+        order: item.order || index + 1,
       })) as any;
     }
 
-    const updatedTour = this.toursRepository.merge(tour, tourData);
+    const updatedTour = this.toursRepository.merge(existingTour, tourData);
     return this.toursRepository.save(updatedTour);
   }
 

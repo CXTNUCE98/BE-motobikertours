@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { TourItinerary } from './tour-itinerary.entity';
 import { Vehicle } from '../../vehicles/entities/vehicle.entity';
+import { Review } from '../../reviews/entities/review.entity';
 
 @Entity()
 export class Tour {
@@ -59,6 +60,9 @@ export class Tour {
     cascade: true,
   })
   itineraries: TourItinerary[];
+
+  @OneToMany(() => Review, (review) => review.tour)
+  reviews: Review[];
 
   @ManyToOne(() => Vehicle, { nullable: true })
   @JoinColumn({ name: 'suggested_vehicle_id' })
