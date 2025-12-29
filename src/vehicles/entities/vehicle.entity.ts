@@ -21,7 +21,7 @@ export class Vehicle {
   capacity: number;
 
   @Column('decimal', { precision: 10, scale: 2 })
-  price_per_km: number;
+  pricePerKm: number;
 
   @Column({ nullable: true })
   thumbnail: string;
@@ -30,11 +30,11 @@ export class Vehicle {
   amenities: string[]; // ['Wifi', 'Water', 'Leather Seats']
 
   @Column({ default: true })
-  is_available: boolean;
+  isAvailable: boolean;
 
   @CreateDateColumn()
-  created_at: Date;
+  createdAt: Date;
 
   @UpdateDateColumn()
-  updated_at: Date;
+  updatedAt: Date;
 }

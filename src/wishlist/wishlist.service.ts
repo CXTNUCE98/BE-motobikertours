@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  ConflictException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Wishlist } from './entities/wishlist.entity';
@@ -50,7 +46,7 @@ export class WishlistService {
     const list = await this.wishlistRepository.find({
       where: { userId },
       relations: ['tour'],
-      order: { created_at: 'DESC' },
+      order: { createdAt: 'DESC' },
     });
     return list.map((item) => item.tour);
   }
@@ -69,5 +65,14 @@ export class WishlistService {
       where: { userId, tourId },
     });
     return count > 0;
+  }
+
+  /**
+   * Lấy số lượng tour yêu thích của người dùng.
+   */
+  async getUserWishlistCount({ userId }: { userId: string }): Promise<number> {
+    return this.wishlistRepository.count({
+      where: { userId },
+    });
   }
 }

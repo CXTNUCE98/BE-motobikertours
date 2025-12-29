@@ -21,13 +21,13 @@ export class GetToursDto extends PaginationDto {
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
-  price_min?: number;
+  priceMin?: number;
 
   @ApiPropertyOptional({ description: 'Maximum price' })
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
-  price_max?: number;
+  priceMax?: number;
 
   @ApiPropertyOptional({
     enum: DurationRange,
@@ -35,7 +35,7 @@ export class GetToursDto extends PaginationDto {
   })
   @IsOptional()
   @IsEnum(DurationRange)
-  duration_range?: DurationRange;
+  durationRange?: DurationRange;
 
   @ApiPropertyOptional({
     description: 'Filter by tour types (comma separated)',
@@ -64,7 +64,7 @@ export class GetToursDto extends PaginationDto {
     }
     return value;
   })
-  depart_from?: string[];
+  departFrom?: string[];
 
   @ApiPropertyOptional({
     description: 'Filter by featured tours',
@@ -77,5 +77,5 @@ export class GetToursDto extends PaginationDto {
     if (value === 'false' || value === false) return false;
     return value;
   })
-  is_featured?: boolean;
+  isFeatured?: boolean;
 }

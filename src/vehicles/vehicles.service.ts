@@ -19,7 +19,7 @@ export class VehiclesService {
 
   async findAll(): Promise<Vehicle[]> {
     return await this.vehiclesRepository.find({
-      order: { created_at: 'DESC' },
+      order: { createdAt: 'DESC' },
     });
   }
 

@@ -5,14 +5,14 @@ export class EstimateTourDto {
   @ApiProperty({ example: ['id1', 'id2'], description: 'List of HotSpot IDs' })
   @IsArray()
   @IsString({ each: true })
-  hot_spot_ids: string[];
+  hotSpotIds: string[];
 
   @ApiProperty({ example: 'vehicle-uuid', description: 'Selected vehicle ID' })
   @IsString()
-  vehicle_id: string;
+  vehicleId: string;
 
   @ApiProperty({ example: 'Hanoi', description: 'Custom departure point' })
   @IsString()
   @IsOptional()
-  departure_name?: string;
+  departureName?: string;
 }

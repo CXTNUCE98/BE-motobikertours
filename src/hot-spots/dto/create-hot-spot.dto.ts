@@ -52,15 +52,15 @@ export class CreateHotSpotDto {
   @ApiPropertyOptional({ example: '08:00 - 22:00' })
   @IsString()
   @IsOptional()
-  opening_hours?: string;
+  openingHours?: string;
 
   @ApiPropertyOptional({ example: '850.000đ - 1.050.000đ' })
   @IsString()
   @IsOptional()
-  price_info?: string;
+  priceInfo?: string;
 
   @ApiPropertyOptional({ example: true })
   @IsBoolean()
   @IsOptional()
-  is_hot?: boolean;
+  isHot?: boolean;
 }

@@ -33,7 +33,7 @@ export class UsersService {
       where,
       skip,
       take: r,
-      order: { created_at: 'DESC' },
+      order: { createdAt: 'DESC' },
     });
 
     return {

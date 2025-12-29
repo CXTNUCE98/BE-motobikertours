@@ -49,7 +49,7 @@ export class AuthService {
       const token = this.jwtService.sign(payload);
       console.log('JWT token created successfully');
       return {
-        access_token: token,
+        accessToken: token,
       };
     } catch (error) {
       console.error('Error creating JWT token:', error);

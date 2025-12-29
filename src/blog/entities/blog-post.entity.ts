@@ -49,5 +49,5 @@ export class BlogPost {
   status: string;
 
   @CreateDateColumn()
-  created_at: Date;
+  createdAt: Date;
 }

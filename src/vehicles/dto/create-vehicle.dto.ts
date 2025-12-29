@@ -22,7 +22,7 @@ export class CreateVehicleDto {
 
   @ApiProperty({ example: 1.5 })
   @IsNumber()
-  price_per_km: number;
+  pricePerKm: number;
 
   @ApiProperty({ required: false })
   @IsString()
@@ -38,5 +38,5 @@ export class CreateVehicleDto {
   @ApiProperty({ required: false, default: true })
   @IsBoolean()
   @IsOptional()
-  is_available?: boolean;
+  isAvailable?: boolean;
 }

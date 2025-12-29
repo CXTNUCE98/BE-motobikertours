@@ -20,10 +20,10 @@ export class HotSpotsService {
 
   async executeFindAll(query: GetHotSpotsDto) {
     const { lat, lng, category } = query;
-    const qb = this.hotSpotRepository.createQueryBuilder('hot_spot');
+    const qb = this.hotSpotRepository.createQueryBuilder('hotSpot');
 
     if (category) {
-      qb.andWhere('hot_spot.category = :category', { category });
+      qb.andWhere('hotSpot.category = :category', { category });
     }
 
     const spots = await qb.getMany();

@@ -18,20 +18,20 @@ export class TourItinerary {
   tour: Tour;
 
   @ManyToOne(() => HotSpot, { eager: true })
-  hot_spot: HotSpot;
+  hotSpot: HotSpot;
 
   @Column('int')
   order: number;
 
   @Column('text', { nullable: true })
-  activity_description: string;
+  activityDescription: string;
 
   @Column('int', { nullable: true })
-  duration_minutes: number;
+  durationMinutes: number;
 
   @CreateDateColumn()
-  created_at: Date;
+  createdAt: Date;
 
   @UpdateDateColumn()
-  updated_at: Date;
+  updatedAt: Date;
 }

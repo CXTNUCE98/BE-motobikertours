@@ -18,7 +18,7 @@ export class ServicesService {
     const where = q
       ? [
           { title: Like(`%${q}%`) },
-          { short_title: Like(`%${q}%`) },
+          { shortTitle: Like(`%${q}%`) },
           { description: Like(`%${q}%`) },
         ]
       : {};
@@ -27,7 +27,7 @@ export class ServicesService {
       where,
       skip,
       take: r,
-      order: { created_at: 'DESC' },
+      order: { createdAt: 'DESC' },
     });
 
     return {

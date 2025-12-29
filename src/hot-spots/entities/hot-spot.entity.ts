@@ -36,17 +36,17 @@ export class HotSpot {
   images: string[];
 
   @Column('text', { nullable: true })
-  opening_hours: string; // Giờ mở cửa, có thể là text hoặc JSON string
+  openingHours: string; // Giờ mở cửa, có thể là text hoặc JSON string
 
   @Column('text', { nullable: true })
-  price_info: string; // Thông tin giá vé
+  priceInfo: string; // Thông tin giá vé
 
   @Column({ default: false })
-  is_hot: boolean;
+  isHot: boolean;
 
   @CreateDateColumn()
-  created_at: Date;
+  createdAt: Date;
 
   @UpdateDateColumn()
-  updated_at: Date;
+  updatedAt: Date;
 }

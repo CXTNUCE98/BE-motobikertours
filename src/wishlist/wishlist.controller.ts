@@ -52,4 +52,14 @@ export class WishlistController {
     });
     return { isWishlisted };
   }
+
+  @Get('count')
+  @ApiOperation({ summary: 'Lấy số lượng tour trong wishlist' })
+  @ApiResponse({ status: 200, description: 'Số lượng tour' })
+  async getWishlistCount(@Request() req) {
+    const count = await this.wishlistService.getUserWishlistCount({
+      userId: req.user.id,
+    });
+    return { count };
+  }
 }

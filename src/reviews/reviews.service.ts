@@ -43,7 +43,7 @@ export class ReviewsService {
   async getTourReviews({ tourId }: { tourId: string }): Promise<Review[]> {
     return this.reviewRepository.find({
       where: { tourId },
-      order: { created_at: 'DESC' },
+      order: { createdAt: 'DESC' },
       relations: ['user'],
     });
   }

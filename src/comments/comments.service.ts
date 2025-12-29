@@ -59,7 +59,7 @@ export class CommentsService {
     const queryBuilder = this.commentRepository
       .createQueryBuilder('comment')
       .leftJoinAndSelect('comment.replies', 'replies')
-      .orderBy('comment.created_at', 'DESC')
+      .orderBy('comment.createdAt', 'DESC')
       .skip(skip)
       .take(limit);
 
@@ -113,7 +113,7 @@ export class CommentsService {
     const [topLevelComments, total] = await this.commentRepository.findAndCount(
       {
         where: { blogId, parentId: IsNull() },
-        order: { created_at: 'DESC' },
+        order: { createdAt: 'DESC' },
         skip,
         take: limit,
       },
@@ -124,7 +124,7 @@ export class CommentsService {
       topLevelComments.map(async (comment) => {
         const replies = await this.commentRepository.find({
           where: { parentId: comment.id },
-          order: { created_at: 'ASC' },
+          order: { createdAt: 'ASC' },
           take: 5, // Limit initial replies shown
         });
 

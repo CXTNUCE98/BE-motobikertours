@@ -14,7 +14,7 @@ export class Service {
   title: string;
 
   @Column()
-  short_title: string;
+  shortTitle: string;
 
   @Column('text')
   description: string;
@@ -26,12 +26,12 @@ export class Service {
   icon: string;
 
   @Column()
-  price_range: string;
+  priceRange: string;
 
   // SQLite does not support array type, use simple-array (comma-separated)
   @Column('simple-array')
   features: string[];
 
   @CreateDateColumn()
-  created_at: Date;
+  createdAt: Date;
 }

@@ -15,7 +15,7 @@ import { DurationRange } from './get-tours.dto';
 export class ItineraryDto {
   @ApiProperty({ description: 'UUID of the hot spot' })
   @IsString()
-  hot_spot_id: string;
+  hotSpotId: string;
 
   @ApiPropertyOptional({ description: 'Order of specific activity' })
   @IsNumber()
@@ -25,12 +25,12 @@ export class ItineraryDto {
   @ApiPropertyOptional({ description: 'Description of what to do here' })
   @IsString()
   @IsOptional()
-  activity_description?: string;
+  activityDescription?: string;
 
   @ApiPropertyOptional({ description: 'Estimated time spent in minutes' })
   @IsNumber()
   @IsOptional()
-  duration_minutes?: number;
+  durationMinutes?: number;
 }
 
 export class CreateTourDto {
@@ -75,7 +75,7 @@ export class CreateTourDto {
   @ApiProperty({ example: 199.99, description: 'Price in USD' })
   @IsNumber()
   @Transform(({ value }) => parseFloat(value))
-  price_usd: number;
+  priceUsd: number;
 
   @ApiPropertyOptional({ example: 10, description: 'Discount percentage' })
   @IsOptional()
@@ -93,11 +93,11 @@ export class CreateTourDto {
     description: 'Duration range for filtering (1-3, 4-7, 8+)',
   })
   @IsEnum(DurationRange)
-  duration_range: DurationRange;
+  durationRange: DurationRange;
 
   @ApiProperty({ example: 'Hanoi', description: 'Starting city' })
   @IsString()
-  depart_from: string;
+  departFrom: string;
 
   @ApiProperty({
     example: 'Hanoi → Ha Long → Hue → Hoi An',
@@ -121,7 +121,7 @@ export class CreateTourDto {
     if (value === 'false' || value === false) return false;
     return Boolean(value);
   })
-  is_featured: boolean;
+  isFeatured: boolean;
 
   @ApiPropertyOptional({
     type: [ItineraryDto],
@@ -136,5 +136,5 @@ export class CreateTourDto {
   @ApiPropertyOptional({ description: 'Recommended vehicle for this tour' })
   @IsString()
   @IsOptional()
-  suggested_vehicle_id?: string;
+  suggestedVehicleId?: string;
 }

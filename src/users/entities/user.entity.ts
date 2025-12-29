@@ -35,5 +35,5 @@ export class User {
   provider: string;
 
   @CreateDateColumn()
-  created_at: Date;
+  createdAt: Date;
 }

@@ -25,9 +25,9 @@ export class ToursService {
 
     if (itineraries) {
       tour.itineraries = itineraries.map((item, index) => ({
-        activity_description: item.activity_description,
-        duration_minutes: item.duration_minutes,
-        hot_spot: { id: item.hot_spot_id },
+        activityDescription: item.activityDescription,
+        durationMinutes: item.durationMinutes,
+        hotSpot: { id: item.hotSpotId },
         order: item.order || index + 1,
       })) as any;
     }
@@ -40,12 +40,12 @@ export class ToursService {
       q,
       p = 1,
       r = 10,
-      price_min,
-      price_max,
-      duration_range,
+      priceMin,
+      priceMax,
+      durationRange,
       type,
-      depart_from,
-      is_featured,
+      departFrom,
+      isFeatured,
     } = query;
     const skip = (p - 1) * r;
 
@@ -58,17 +58,17 @@ export class ToursService {
       );
     }
 
-    if (price_min) {
-      queryBuilder.andWhere('tour.price_usd >= :price_min', { price_min });
+    if (priceMin) {
+      queryBuilder.andWhere('tour.priceUsd >= :priceMin', { priceMin });
     }
 
-    if (price_max) {
-      queryBuilder.andWhere('tour.price_usd <= :price_max', { price_max });
+    if (priceMax) {
+      queryBuilder.andWhere('tour.priceUsd <= :priceMax', { priceMax });
     }
 
-    if (duration_range) {
-      queryBuilder.andWhere('tour.duration_range = :duration_range', {
-        duration_range,
+    if (durationRange) {
+      queryBuilder.andWhere('tour.durationRange = :durationRange', {
+        durationRange,
       });
     }
 
@@ -85,24 +85,24 @@ export class ToursService {
       );
     }
 
-    if (depart_from && depart_from.length > 0) {
-      queryBuilder.andWhere('tour.depart_from IN (:...depart_from)', {
-        depart_from,
+    if (departFrom && departFrom.length > 0) {
+      queryBuilder.andWhere('tour.departFrom IN (:...departFrom)', {
+        departFrom,
       });
     }
 
-    if (is_featured !== undefined) {
-      queryBuilder.andWhere('tour.is_featured = :is_featured', {
-        is_featured,
+    if (isFeatured !== undefined) {
+      queryBuilder.andWhere('tour.isFeatured = :isFeatured', {
+        isFeatured,
       });
     }
 
     queryBuilder
       .leftJoinAndSelect('tour.itineraries', 'itinerary')
-      .leftJoinAndSelect('itinerary.hot_spot', 'hot_spot')
-      .leftJoinAndSelect('tour.suggested_vehicle', 'vehicle')
+      .leftJoinAndSelect('itinerary.hotSpot', 'hotSpot')
+      .leftJoinAndSelect('tour.suggestedVehicle', 'vehicle')
       .leftJoinAndSelect('tour.reviews', 'review')
-      .orderBy('tour.created_at', 'DESC')
+      .orderBy('tour.createdAt', 'DESC')
       .addOrderBy('itinerary.order', 'ASC')
       .skip(skip)
       .take(r);
@@ -125,12 +125,12 @@ export class ToursService {
 
       const averageRating =
         totalReviews > 0 ? parseFloat((sum / totalReviews).toFixed(1)) : 0;
-      const { reviews: _reviews, ...tourWithoutReviews } = tour;
       return {
-        ...tourWithoutReviews,
-        rating_stats: {
-          average_rating: averageRating,
-          total_reviews: totalReviews,
+        ...tour,
+        reviews: undefined,
+        ratingStats: {
+          averageRating,
+          totalReviews,
           breakdown,
         },
       };
@@ -150,8 +150,8 @@ export class ToursService {
       where: { id },
       relations: [
         'itineraries',
-        'itineraries.hot_spot',
-        'suggested_vehicle',
+        'itineraries.hotSpot',
+        'suggestedVehicle',
         'reviews',
         'reviews.user',
       ],
@@ -160,7 +160,7 @@ export class ToursService {
           order: 'ASC',
         },
         reviews: {
-          created_at: 'DESC',
+          createdAt: 'DESC',
         },
       },
     });
@@ -185,9 +185,9 @@ export class ToursService {
 
     return {
       ...tour,
-      rating_stats: {
-        average_rating: averageRating,
-        total_reviews: totalReviews,
+      ratingStats: {
+        averageRating,
+        totalReviews,
         breakdown,
       },
     };
@@ -202,9 +202,9 @@ export class ToursService {
 
     if (itineraries) {
       existingTour.itineraries = itineraries.map((item, index) => ({
-        activity_description: item.activity_description,
-        duration_minutes: item.duration_minutes,
-        hot_spot: { id: item.hot_spot_id },
+        activityDescription: item.activityDescription,
+        durationMinutes: item.durationMinutes,
+        hotSpot: { id: item.hotSpotId },
         order: item.order || index + 1,
       })) as any;
     }
@@ -214,13 +214,13 @@ export class ToursService {
   }
 
   async estimate(estimateDto: EstimateTourDto) {
-    const { hot_spot_ids, vehicle_id } = estimateDto;
+    const { hotSpotIds, vehicleId } = estimateDto;
 
     // 1. Lấy thông tin Hot Spots và Vehicle
     const hotSpots = await Promise.all(
-      hot_spot_ids.map((id) => this.hotSpotsService.executeFindOne(id)),
+      hotSpotIds.map((id) => this.hotSpotsService.executeFindOne(id)),
     );
-    const vehicle = await this.vehiclesService.findOne(vehicle_id);
+    const vehicle = await this.vehiclesService.findOne(vehicleId);
 
     if (!vehicle) {
       throw new Error('Vehicle not found');
@@ -237,18 +237,18 @@ export class ToursService {
 
     // 4. Tính toán giá tiền
     // Giá = (Tiền xe/km * Quãng đường) + Phí dịch vụ cố định (ví dụ 10 USD)
-    const basePrice = Number(vehicle.price_per_km) * route.distance;
+    const basePrice = Number(vehicle.pricePerKm) * route.distance;
     const serviceFee = 10;
-    const total_usd = Math.round((basePrice + serviceFee) * 100) / 100;
+    const totalUsd = Math.round((basePrice + serviceFee) * 100) / 100;
 
     return {
       ...route,
       vehicle: {
         id: vehicle.id,
         model: vehicle.model,
-        price_per_km: vehicle.price_per_km,
+        pricePerKm: vehicle.pricePerKm,
       },
-      price_estimate_usd: total_usd,
+      priceEstimateUsd: totalUsd,
       currency: 'USD',
     };
   }

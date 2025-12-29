@@ -44,10 +44,10 @@ export class Comment {
   replyCount: number;
 
   @CreateDateColumn()
-  created_at: Date;
+  createdAt: Date;
 
   @UpdateDateColumn()
-  updated_at: Date;
+  updatedAt: Date;
 
   // Relations
   @ManyToOne(() => BlogPost, { onDelete: 'CASCADE' })
@@ -85,7 +85,7 @@ export class CommentLike {
   type: 'like' | 'dislike';
 
   @CreateDateColumn()
-  created_at: Date;
+  createdAt: Date;
 
   @ManyToOne(() => Comment, (comment) => comment.likes, {
     onDelete: 'CASCADE',

@@ -33,7 +33,7 @@ export class Tour {
   content: string;
 
   @Column('decimal')
-  price_usd: number;
+  priceUsd: number;
 
   @Column('decimal', { default: 0 })
   discount: number;
@@ -42,10 +42,10 @@ export class Tour {
   duration: string;
 
   @Column()
-  duration_range: string;
+  durationRange: string;
 
   @Column()
-  depart_from: string;
+  departFrom: string;
 
   @Column()
   routes: string;
@@ -54,7 +54,7 @@ export class Tour {
   type: string[];
 
   @Column({ default: false })
-  is_featured: boolean;
+  isFeatured: boolean;
 
   @OneToMany(() => TourItinerary, (itinerary) => itinerary.tour, {
     cascade: true,
@@ -65,12 +65,12 @@ export class Tour {
   reviews: Review[];
 
   @ManyToOne(() => Vehicle, { nullable: true })
-  @JoinColumn({ name: 'suggested_vehicle_id' })
-  suggested_vehicle: Vehicle;
+  @JoinColumn({ name: 'suggestedVehicleId' })
+  suggestedVehicle: Vehicle;
 
   @Column({ nullable: true })
-  suggested_vehicle_id: string;
+  suggestedVehicleId: string;
 
   @CreateDateColumn()
-  created_at: Date;
+  createdAt: Date;
 }

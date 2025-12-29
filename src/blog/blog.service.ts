@@ -71,7 +71,7 @@ export class BlogService {
       queryBuilder.andWhere('blog.name LIKE :name', { name: `%${name}%` });
     }
 
-    queryBuilder.orderBy('blog.created_at', 'DESC').skip(skip).take(r);
+    queryBuilder.orderBy('blog.createdAt', 'DESC').skip(skip).take(r);
 
     const [data, total] = await queryBuilder.getManyAndCount();
 
