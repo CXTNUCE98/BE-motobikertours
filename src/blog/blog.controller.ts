@@ -29,7 +29,7 @@ export class BlogController {
   constructor(
     private readonly blogService: BlogService,
     private readonly cloudinaryService: CloudinaryService,
-  ) {}
+  ) { }
 
   @Post()
   @ApiOperation({ summary: 'Create a new blog post' })
@@ -92,9 +92,9 @@ export class BlogController {
     });
 
     return {
-      imageId: result.public_id,
-      url: result.url,
-      secureUrl: result.secure_url,
+      imageId: result.publicId,
+      url: result.secureUrl,
+      secureUrl: result.secureUrl,
     };
   }
 
