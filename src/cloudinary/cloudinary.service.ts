@@ -10,13 +10,22 @@ export interface CloudinaryResponse {
 
 @Injectable()
 export class CloudinaryService {
+  /**
+   * Tải ảnh lên Cloudinary từ buffer của tệp tin
+   * @param file Tệp tin từ Multer
+   * @param options Các tùy chọn bổ sung (ví dụ: folder)
+   * @returns Kết quả từ Cloudinary
+   */
   async uploadImage(
     file: Express.Multer.File,
-    options?: any,
+    options?: { folder?: string },
   ): Promise<CloudinaryResponse> {
     return new Promise((resolve, reject) => {
       const upload = cloudinary.uploader.upload_stream(
-        options,
+        {
+          folder: options?.folder,
+          ...options,
+        },
         (error, result) => {
           if (error) return reject(error);
           resolve({

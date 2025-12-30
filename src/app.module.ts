@@ -8,6 +8,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { ToursModule } from './tours/tours.module';
 import { ServicesModule } from './services/services.module';
 import { BlogModule } from './blog/blog.module';
+import { UploadModule } from './upload/upload.module';
 import { UsersModule } from './users/users.module';
 import { CommentsModule } from './comments/comments.module';
 import { User } from './users/entities/user.entity';
@@ -139,6 +140,7 @@ import { WishlistModule } from './wishlist/wishlist.module';
     ToursModule,
     ServicesModule,
     BlogModule,
+    UploadModule,
     UsersModule,
     CommentsModule,
     HotSpotsModule,

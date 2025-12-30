@@ -1,35 +1,13 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  UseInterceptors,
-  UploadedFile,
-  BadRequestException,
-  Query,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiConsumes,
-  ApiBody,
-} from '@nestjs/swagger';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { BlogService } from './blog.service';
 import { CreateBlogDto } from './dto/create-blog.dto';
-import { CloudinaryService } from '../cloudinary/cloudinary.service';
-import { UploadImageResponseDto } from './dto/upload-image.dto';
 import { GetBlogDto } from './dto/get-blog.dto';
 
 @ApiTags('blog')
 @Controller('blog')
 export class BlogController {
-  constructor(
-    private readonly blogService: BlogService,
-    private readonly cloudinaryService: CloudinaryService,
-  ) { }
+  constructor(private readonly blogService: BlogService) {}
 
   @Post()
   @ApiOperation({ summary: 'Create a new blog post' })
@@ -41,61 +19,6 @@ export class BlogController {
   @ApiResponse({ status: 400, description: 'Bad request' })
   create(@Body() createBlogDto: CreateBlogDto) {
     return this.blogService.create(createBlogDto);
-  }
-
-  @Post('upload-image')
-  @ApiOperation({ summary: 'Upload image for blog content' })
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        file: {
-          type: 'string',
-          format: 'binary',
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 201,
-    description: 'Image uploaded successfully',
-    type: UploadImageResponseDto,
-  })
-  @ApiResponse({ status: 400, description: 'No file uploaded or invalid file' })
-  @UseInterceptors(FileInterceptor('file'))
-  async uploadImage(@UploadedFile() file: Express.Multer.File) {
-    if (!file) {
-      throw new BadRequestException('No file uploaded');
-    }
-
-    // Validate file type
-    const allowedMimeTypes = [
-      'image/jpeg',
-      'image/png',
-      'image/gif',
-      'image/webp',
-    ];
-    if (!allowedMimeTypes.includes(file.mimetype)) {
-      throw new BadRequestException(
-        'Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed',
-      );
-    }
-
-    // Generate custom image ID
-    const uniqueId = Math.random().toString(36).substring(2, 10);
-    const imageId = `image-${uniqueId}`;
-
-    // Upload to Cloudinary
-    const result = await this.cloudinaryService.uploadImage(file, {
-      public_id: imageId,
-    });
-
-    return {
-      imageId: result.publicId,
-      url: result.secureUrl,
-      secureUrl: result.secureUrl,
-    };
   }
 
   @Get()
