@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
+import * as crypto from 'crypto';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { PaginationDto } from '../common/dto/pagination.dto';
@@ -10,7 +12,21 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    private configService: ConfigService,
   ) {}
+
+  private generateCrispSignature(email: string): string {
+    const secretKey = this.configService.get<string>(
+      'CRISP_IDENTITY_VERIFY_KEY',
+    );
+    if (!secretKey) return '';
+
+    // Đảm bảo email được lowercase để khớp với Frontend
+    return crypto
+      .createHmac('sha256', secretKey)
+      .update(email.toLowerCase())
+      .digest('hex');
+  }
 
   async findOne(email: string): Promise<User | undefined> {
     return this.usersRepository.findOneBy({ email });
@@ -45,8 +61,16 @@ export class UsersService {
     };
   }
 
-  async findById(id: string): Promise<User | undefined> {
-    return this.usersRepository.findOneBy({ id });
+  async findById(
+    id: string,
+  ): Promise<(User & { crispSignature?: string }) | undefined> {
+    const user = await this.usersRepository.findOneBy({ id });
+    if (!user) return undefined;
+
+    return {
+      ...user,
+      crispSignature: this.generateCrispSignature(user.email),
+    };
   }
 
   async update(id: string, attrs: Partial<User>): Promise<User> {
