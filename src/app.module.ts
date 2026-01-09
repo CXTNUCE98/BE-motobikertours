@@ -25,6 +25,10 @@ import { Review } from './reviews/entities/review.entity';
 import { ReviewsModule } from './reviews/reviews.module';
 import { Wishlist } from './wishlist/entities/wishlist.entity';
 import { WishlistModule } from './wishlist/wishlist.module';
+import { BookingsModule } from './bookings/bookings.module';
+import { Booking } from './bookings/entities/booking.entity';
+import { Payment } from './bookings/entities/payment.entity';
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
   imports: [
@@ -44,6 +48,8 @@ import { WishlistModule } from './wishlist/wishlist.module';
           TourItinerary,
           Review,
           Wishlist,
+          Booking,
+          Payment,
         ];
 
         const nodeEnv = configService.get<string>('NODE_ENV', 'development');
@@ -147,6 +153,8 @@ import { WishlistModule } from './wishlist/wishlist.module';
     VehiclesModule,
     ReviewsModule,
     WishlistModule,
+    BookingsModule,
+    PaymentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

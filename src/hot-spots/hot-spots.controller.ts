@@ -18,7 +18,7 @@ import { ApiTags } from '@nestjs/swagger';
 @ApiTags('Hot spots')
 @Controller('hot-spots')
 export class HotSpotsController {
-  constructor(private readonly hotSpotsService: HotSpotsService) { }
+  constructor(private readonly hotSpotsService: HotSpotsService) {}
 
   @Post()
   executeCreate(@Body() createHotSpotDto: CreateHotSpotDto) {
