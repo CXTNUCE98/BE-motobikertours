@@ -32,6 +32,10 @@ export class UsersService {
     return this.usersRepository.findOneBy({ email });
   }
 
+  async findByUserName(userName: string): Promise<User | undefined> {
+    return this.usersRepository.findOneBy({ userName });
+  }
+
   async create(createUserDto: CreateUserDto): Promise<User> {
     const user = this.usersRepository.create(createUserDto);
     return this.usersRepository.save(user);
