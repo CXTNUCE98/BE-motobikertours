@@ -3,6 +3,7 @@ import {
   Post,
   Get,
   Param,
+  Body,
   UseGuards,
   Request,
 } from '@nestjs/common';
@@ -13,6 +14,7 @@ import {
   ApiOperation,
   ApiBearerAuth,
   ApiResponse,
+  ApiBody,
 } from '@nestjs/swagger';
 
 @ApiTags('Wishlist')
@@ -61,5 +63,37 @@ export class WishlistController {
       userId: req.user.id,
     });
     return { count };
+  }
+
+  @Post('check-bulk')
+  @ApiOperation({
+    summary: 'Kiểm tra trạng thái wishlist cho nhiều tour cùng lúc',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        tourIds: {
+          type: 'array',
+          items: { type: 'string', format: 'uuid' },
+          description: 'Danh sách ID tour cần kiểm tra',
+        },
+      },
+      required: ['tourIds'],
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Map { tourId: isWishlisted }',
+  })
+  async checkWishlistBulk(
+    @Request() req,
+    @Body('tourIds') tourIds: string[],
+  ) {
+    const result = await this.wishlistService.isWishlistedBulk({
+      userId: req.user.id,
+      tourIds,
+    });
+    return { wishlistStatus: result };
   }
 }

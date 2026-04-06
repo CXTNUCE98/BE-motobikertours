@@ -3,14 +3,17 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   OneToMany,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { TourItinerary } from './tour-itinerary.entity';
 import { Vehicle } from '../../vehicles/entities/vehicle.entity';
 import { Review } from '../../reviews/entities/review.entity';
 
+@Index(['priceUsd', 'createdAt'])
 @Entity()
 export class Tour {
   @PrimaryGeneratedColumn('uuid')
@@ -44,15 +47,18 @@ export class Tour {
   @Column()
   durationRange: string;
 
+  @Index()
   @Column()
   departFrom: string;
 
   @Column()
   routes: string;
 
+  @Index()
   @Column('simple-array')
   type: string[];
 
+  @Index()
   @Column({ default: false })
   isFeatured: boolean;
 
@@ -73,4 +79,7 @@ export class Tour {
 
   @CreateDateColumn()
   createdAt: Date;
+
+  @DeleteDateColumn()
+  deletedAt: Date;
 }

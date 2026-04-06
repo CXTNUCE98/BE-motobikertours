@@ -1,5 +1,6 @@
-import { Repository, Brackets } from 'typeorm';
+import { Repository, Brackets, Not, IsNull } from 'typeorm';
 import { Tour } from './entities/tour.entity';
+import { Review } from '../reviews/entities/review.entity';
 import { CreateTourDto } from './dto/create-tour.dto';
 import { UpdateTourDto } from './dto/update-tour.dto';
 import { GetToursDto } from './dto/get-tours.dto';
@@ -7,19 +8,37 @@ import { EstimateTourDto } from './dto/estimate-tour.dto';
 import { OsrmRouterService } from './osrm-router.service';
 import { HotSpotsService } from '../hot-spots/hot-spots.service';
 import { VehiclesService } from '../vehicles/vehicles.service';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
+import { AuditLogService } from '../audit-log/audit-log.service';
+
 @Injectable()
 export class ToursService {
   constructor(
     @InjectRepository(Tour)
     private toursRepository: Repository<Tour>,
+    @InjectRepository(Review)
+    private reviewRepository: Repository<Review>,
     private readonly osrmService: OsrmRouterService,
     private readonly hotSpotsService: HotSpotsService,
     private readonly vehiclesService: VehiclesService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    private readonly auditLogService: AuditLogService,
   ) {}
 
-  async create(createTourDto: CreateTourDto) {
+  private async invalidateTourCache(): Promise<void> {
+    const store = (this.cacheManager as any).store ?? (this.cacheManager as any).stores?.[0];
+    if (store && typeof store.keys === 'function') {
+      const keys: string[] = await store.keys('tours:*');
+      await Promise.all(keys.map((key) => this.cacheManager.del(key)));
+    } else {
+      await this.cacheManager.clear();
+    }
+  }
+
+  async create(createTourDto: CreateTourDto, userId?: string, ipAddress?: string) {
     const { itineraries, ...tourData } = createTourDto;
     const tour = this.toursRepository.create(tourData);
 
@@ -32,10 +51,26 @@ export class ToursService {
       })) as any;
     }
 
-    return this.toursRepository.save(tour);
+    const result = await this.toursRepository.save(tour);
+    await this.invalidateTourCache();
+
+    await this.auditLogService.log({
+      userId: userId || 'system',
+      action: 'CREATE',
+      entityType: 'Tour',
+      entityId: result.id,
+      changes: { after: result },
+      ipAddress,
+    });
+
+    return result;
   }
 
   async findAll(query: GetToursDto) {
+    const key = 'tours:' + JSON.stringify(query);
+    const cached = await this.cacheManager.get(key);
+    if (cached) return cached;
+
     const {
       q,
       p = 1,
@@ -46,6 +81,8 @@ export class ToursService {
       type,
       departFrom,
       isFeatured,
+      sortBy = 'createdAt',
+      sortOrder = 'DESC',
     } = query;
     const skip = (p - 1) * r;
 
@@ -97,55 +134,90 @@ export class ToursService {
       });
     }
 
+    const allowedSortColumns = ['priceUsd', 'createdAt', 'durationRange', 'title'];
+    const safeSortBy = allowedSortColumns.includes(sortBy) ? sortBy : 'createdAt';
+    const safeSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
+
     queryBuilder
-      .leftJoinAndSelect('tour.itineraries', 'itinerary')
-      .leftJoinAndSelect('itinerary.hotSpot', 'hotSpot')
+      .select([
+        'tour.id',
+        'tour.title',
+        'tour.thumbnail',
+        'tour.priceUsd',
+        'tour.discount',
+        'tour.duration',
+        'tour.durationRange',
+        'tour.departFrom',
+        'tour.routes',
+        'tour.type',
+        'tour.isFeatured',
+        'tour.createdAt',
+        'tour.description',
+      ])
       .leftJoinAndSelect('tour.suggestedVehicle', 'vehicle')
-      .leftJoinAndSelect('tour.reviews', 'review')
-      .orderBy('tour.createdAt', 'DESC')
-      .addOrderBy('itinerary.order', 'ASC')
+      .orderBy(`tour.${safeSortBy}`, safeSortOrder)
       .skip(skip)
       .take(r);
 
     const [tours, total] = await queryBuilder.getManyAndCount();
 
-    const data = tours.map((tour) => {
-      const breakdown = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-      const totalReviews = tour.reviews?.length || 0;
-      let sum = 0;
-      if (tour.reviews) {
-        tour.reviews.forEach((r) => {
-          sum += r.rating;
-          const star = Math.round(r.rating);
-          if (star >= 1 && star <= 5) {
-            breakdown[star]++;
-          }
-        });
-      }
+    const data = await Promise.all(
+      tours.map(async (tour) => {
+        const ratingStats = await this.computeRatingStats(tour.id);
+        const truncatedDesc = tour.description?.length > 200
+          ? tour.description.substring(0, 200) + '...'
+          : tour.description;
+        return {
+          ...tour,
+          description: truncatedDesc,
+          ratingStats,
+        };
+      }),
+    );
 
-      const averageRating =
-        totalReviews > 0 ? parseFloat((sum / totalReviews).toFixed(1)) : 0;
-      return {
-        ...tour,
-        reviews: undefined,
-        ratingStats: {
-          averageRating,
-          totalReviews,
-          breakdown,
-        },
-      };
-    });
-
-    return {
+    const result = {
       data,
       total,
       page: p,
       perPage: r,
       totalPages: Math.ceil(total / r),
     };
+    await this.cacheManager.set(key, result, 60000);
+    return result;
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, options?: { light?: boolean }) {
+    const { light = false } = options || {};
+
+    // Light mode: only basic info for booking page (skip reviews + itineraries)
+    if (light) {
+      const tour = await this.toursRepository.findOne({
+        where: { id },
+        relations: ['suggestedVehicle'],
+      });
+
+      if (!tour) return null;
+
+      const ratingStats = await this.computeRatingStats(tour.id);
+
+      return {
+        id: tour.id,
+        title: tour.title,
+        thumbnail: tour.thumbnail,
+        priceUsd: tour.priceUsd,
+        discount: tour.discount,
+        duration: tour.duration,
+        durationRange: tour.durationRange,
+        departFrom: tour.departFrom,
+        type: tour.type,
+        isFeatured: tour.isFeatured,
+        description: tour.description,
+        suggestedVehicle: tour.suggestedVehicle,
+        ratingStats,
+      };
+    }
+
+    // Full mode: load all relations (for tour detail page)
     const tour = await this.toursRepository.findOne({
       where: { id },
       relations: [
@@ -167,38 +239,59 @@ export class ToursService {
 
     if (!tour) return null;
 
-    const breakdown = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-    const totalReviews = tour.reviews?.length || 0;
-    let sum = 0;
-    if (tour.reviews) {
-      tour.reviews.forEach((r) => {
-        sum += r.rating;
-        const star = Math.round(r.rating);
-        if (star >= 1 && star <= 5) {
-          breakdown[star]++;
-        }
-      });
-    }
-
-    const averageRating =
-      totalReviews > 0 ? parseFloat((sum / totalReviews).toFixed(1)) : 0;
+    const ratingStats = await this.computeRatingStats(tour.id);
 
     return {
       ...tour,
-      ratingStats: {
-        averageRating,
-        totalReviews,
-        breakdown,
-      },
+      ratingStats,
     };
   }
 
-  async update(id: string, updateTourDto: UpdateTourDto) {
+  private async computeRatingStats(tourId: string): Promise<{
+    averageRating: number;
+    totalReviews: number;
+    breakdown: Record<number, number>;
+  }> {
+    const stats = await this.reviewRepository
+      .createQueryBuilder('review')
+      .select('AVG(review.rating)', 'averageRating')
+      .addSelect('COUNT(review.id)', 'totalReviews')
+      .addSelect('review.rating', 'star')
+      .addSelect('COUNT(review.id)', 'count')
+      .where('review.tourId = :tourId', { tourId })
+      .groupBy('review.rating')
+      .getRawMany();
+
+    const breakdown: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    let totalReviews = 0;
+    let weightedSum = 0;
+
+    for (const row of stats) {
+      const star = Math.round(Number(row.star));
+      const count = Number(row.count);
+      if (star >= 1 && star <= 5) {
+        breakdown[star] = count;
+      }
+      totalReviews += count;
+      weightedSum += star * count;
+    }
+
+    const averageRating =
+      totalReviews > 0
+        ? parseFloat((weightedSum / totalReviews).toFixed(1))
+        : 0;
+
+    return { averageRating, totalReviews, breakdown };
+  }
+
+  async update(id: string, updateTourDto: UpdateTourDto, userId?: string, ipAddress?: string) {
     const { itineraries, ...tourData } = updateTourDto;
     const existingTour = await this.toursRepository.findOne({ where: { id } });
     if (!existingTour) {
-      throw new Error('Tour not found');
+      throw new NotFoundException('Tour not found');
     }
+
+    const before = { ...existingTour };
 
     if (itineraries) {
       existingTour.itineraries = itineraries.map((item, index) => ({
@@ -210,7 +303,19 @@ export class ToursService {
     }
 
     const updatedTour = this.toursRepository.merge(existingTour, tourData);
-    return this.toursRepository.save(updatedTour);
+    const result = await this.toursRepository.save(updatedTour);
+    await this.invalidateTourCache();
+
+    await this.auditLogService.log({
+      userId: userId || 'system',
+      action: 'UPDATE',
+      entityType: 'Tour',
+      entityId: id,
+      changes: { before, after: result },
+      ipAddress,
+    });
+
+    return result;
   }
 
   async estimate(estimateDto: EstimateTourDto) {
@@ -223,7 +328,7 @@ export class ToursService {
     const vehicle = await this.vehiclesService.findOne(vehicleId);
 
     if (!vehicle) {
-      throw new Error('Vehicle not found');
+      throw new NotFoundException('Vehicle not found');
     }
 
     // 2. Lấy tọa độ để tính toán lộ trình
@@ -253,11 +358,53 @@ export class ToursService {
     };
   }
 
-  async remove(id: string) {
-    const tour = await this.findOne(id);
+  async remove(id: string, userId?: string, ipAddress?: string) {
+    const tour = await this.toursRepository.findOne({ where: { id } });
     if (!tour) {
-      throw new Error('Tour not found');
+      throw new NotFoundException('Tour not found');
     }
-    return this.toursRepository.remove(tour);
+    const result = await this.toursRepository.softRemove(tour);
+    await this.invalidateTourCache();
+
+    await this.auditLogService.log({
+      userId: userId || 'system',
+      action: 'DELETE',
+      entityType: 'Tour',
+      entityId: id,
+      changes: { before: tour },
+      ipAddress,
+    });
+
+    return result;
+  }
+
+  async findDeleted(): Promise<Tour[]> {
+    return this.toursRepository.find({
+      withDeleted: true,
+      where: { deletedAt: Not(IsNull()) },
+    });
+  }
+
+  async restore(id: string, userId?: string, ipAddress?: string): Promise<Tour> {
+    const tour = await this.toursRepository.findOne({
+      where: { id },
+      withDeleted: true,
+    });
+    if (!tour) {
+      throw new NotFoundException('Tour not found');
+    }
+    const result = await this.toursRepository.recover(tour);
+    await this.invalidateTourCache();
+
+    await this.auditLogService.log({
+      userId: userId || 'system',
+      action: 'RESTORE',
+      entityType: 'Tour',
+      entityId: id,
+      changes: { before: { deletedAt: tour.deletedAt }, after: { deletedAt: null } },
+      ipAddress,
+    });
+
+    return result;
   }
 }

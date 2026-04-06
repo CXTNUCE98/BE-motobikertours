@@ -1,4 +1,4 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import { Injectable, ConflictException, Logger } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
@@ -6,6 +6,8 @@ import { CreateUserDto } from '../users/dto/create-user.dto';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
@@ -13,16 +15,16 @@ export class AuthService {
 
   async validateUser(email: string, pass: string): Promise<any> {
     try {
-      console.log('Validating user with email:', email);
+      this.logger.debug('Validating user with email:' + email);
       const user = await this.usersService.findOne(email);
-      console.log('User found:', user ? 'Yes' : 'No');
+      this.logger.debug('User found:' + (user ? 'Yes' : 'No'));
       if (!user) {
-        console.log('User not found in database');
+        this.logger.debug('User not found in database');
         return null;
       }
-      console.log('Comparing password...');
+      this.logger.debug('Comparing password...');
       const isPasswordValid = await bcrypt.compare(pass, user.password);
-      console.log('Password valid:', isPasswordValid);
+      this.logger.debug('Password valid:' + isPasswordValid);
       if (!isPasswordValid) {
         return null;
       }
@@ -30,15 +32,14 @@ export class AuthService {
       const { password, ...result } = user;
       return result;
     } catch (error) {
-      console.error('Error validating user:', error);
-      console.error('Error stack:', error.stack);
+      this.logger.error('Error validating user:', error.stack);
       return null;
     }
   }
 
   async login(user: any) {
     try {
-      console.log('Creating JWT token for user:', user.id);
+      this.logger.debug('Creating JWT token for user:' + user.id);
       const payload = {
         userName: user.userName,
         email: user.email,
@@ -47,13 +48,12 @@ export class AuthService {
         avatar: user.avatar,
       };
       const token = this.jwtService.sign(payload);
-      console.log('JWT token created successfully');
+      this.logger.debug('JWT token created successfully');
       return {
         accessToken: token,
       };
     } catch (error) {
-      console.error('Error creating JWT token:', error);
-      console.error('Error stack:', error.stack);
+      this.logger.error('Error creating JWT token:', error.stack);
       throw error;
     }
   }

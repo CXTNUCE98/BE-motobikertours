@@ -3,6 +3,7 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  Index,
 } from 'typeorm';
 
 @Entity()
@@ -28,6 +29,7 @@ export class BlogPost {
   @Column()
   thumbnail: string;
 
+  @Index()
   @Column({ nullable: true })
   category: string;
 
@@ -45,6 +47,7 @@ export class BlogPost {
   @Column()
   numWords: number;
 
+  @Index()
   @Column()
   status: string;
 

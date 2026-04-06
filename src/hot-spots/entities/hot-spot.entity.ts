@@ -4,8 +4,10 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 
+@Index(['lat', 'lng'])
 @Entity()
 export class HotSpot {
   @PrimaryGeneratedColumn('uuid')

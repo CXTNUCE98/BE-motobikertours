@@ -1,10 +1,13 @@
 import {
   Injectable,
+  Inject,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull } from 'typeorm';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
+import { Repository } from 'typeorm';
 import { Comment, CommentLike } from './entities/comment.entity';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { GetCommentsDto } from './dto/get-comments.dto';
@@ -17,6 +20,7 @@ export class CommentsService {
     private commentRepository: Repository<Comment>,
     @InjectRepository(CommentLike)
     private commentLikeRepository: Repository<CommentLike>,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
   /**
@@ -44,7 +48,9 @@ export class CommentsService {
       parentId: parentId || null,
     });
 
-    return this.commentRepository.save(comment);
+    const result = await this.commentRepository.save(comment);
+    await this.invalidateCommentsCache(createCommentDto.blogId);
+    return result;
   }
 
   /**
@@ -107,41 +113,38 @@ export class CommentsService {
    * This returns top-level comments with their nested replies
    */
   async getCommentsTree(blogId: string, page = 1, limit = 10) {
+    const cacheKey = `comments:tree:${blogId}:${page}:${limit}`;
+    const cached = await this.cacheManager.get(cacheKey);
+    if (cached) return cached;
+
     const skip = (page - 1) * limit;
 
-    // Get top-level comments
-    const [topLevelComments, total] = await this.commentRepository.findAndCount(
-      {
-        where: { blogId, parentId: IsNull() },
-        order: { createdAt: 'DESC' },
-        skip,
-        take: limit,
-      },
-    );
+    const [topLevelComments, total] = await this.commentRepository
+      .createQueryBuilder('comment')
+      .leftJoinAndSelect('comment.replies', 'reply')
+      .where('comment.blogId = :blogId', { blogId })
+      .andWhere('comment.parentId IS NULL')
+      .orderBy('comment.createdAt', 'DESC')
+      .addOrderBy('reply.createdAt', 'ASC')
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
 
-    // For each top-level comment, get its replies (1 level deep)
-    const commentsWithReplies = await Promise.all(
-      topLevelComments.map(async (comment) => {
-        const replies = await this.commentRepository.find({
-          where: { parentId: comment.id },
-          order: { createdAt: 'ASC' },
-          take: 5, // Limit initial replies shown
-        });
+    const data = topLevelComments.map((c) => ({
+      ...c,
+      replies: c.replies?.slice(0, 5) ?? [],
+    }));
 
-        return {
-          ...comment,
-          replies,
-        };
-      }),
-    );
-
-    return {
-      data: commentsWithReplies,
+    const result = {
+      data,
       total,
       page,
       limit,
       totalPages: Math.ceil(total / limit),
     };
+
+    await this.cacheManager.set(cacheKey, result, 30000);
+    return result;
   }
 
   /**
@@ -295,5 +298,21 @@ export class CommentsService {
     }
 
     await this.commentRepository.remove(comment);
+    await this.invalidateCommentsCache(comment.blogId);
+  }
+
+  /**
+   * Invalidate all cached comments tree entries for a specific blog
+   */
+  private async invalidateCommentsCache(blogId: string): Promise<void> {
+    const store =
+      (this.cacheManager as any).store ??
+      (this.cacheManager as any).stores?.[0];
+    if (store && typeof store.keys === 'function') {
+      const keys: string[] = await store.keys(`comments:tree:${blogId}:*`);
+      await Promise.all(keys.map((key) => this.cacheManager.del(key)));
+    } else {
+      await this.cacheManager.clear();
+    }
   }
 }
