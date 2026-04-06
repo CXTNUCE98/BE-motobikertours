@@ -90,11 +90,11 @@ import { AuditLog } from './audit-log/entities/audit-log.entity';
         const dbSyncConfig = configService.get<string>('DB_SYNCHRONIZE');
         // Production: always false regardless of DB_SYNCHRONIZE
         // Development: true unless DB_SYNCHRONIZE is explicitly set to 'false'
-        const shouldSynchronize = isProduction
-          ? false
-          : dbSyncConfig !== undefined
+        // Development: true unless DB_SYNCHRONIZE is explicitly set to 'false'
+        const shouldSynchronize =
+          dbSyncConfig !== undefined
             ? dbSyncConfig.toLowerCase() === 'true'
-            : true;
+            : !isProduction;
         const shouldLog =
           configService.get<string>('DB_LOGGING', '').toLowerCase() ===
             'true' || nodeEnv === 'development';

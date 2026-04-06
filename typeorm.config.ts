@@ -6,18 +6,17 @@ dotenv.config();
 const nodeEnv = process.env.NODE_ENV || 'development';
 const isProduction = nodeEnv === 'production';
 const dbSyncConfig = process.env.DB_SYNCHRONIZE;
-const shouldSynchronize = isProduction
-  ? false
-  : dbSyncConfig !== undefined
+const shouldSynchronize =
+  dbSyncConfig !== undefined
     ? dbSyncConfig.toLowerCase() === 'true'
-    : true;
+    : !isProduction;
 const shouldLog =
   (process.env.DB_LOGGING || '').toLowerCase() === 'true' ||
   nodeEnv === 'development';
 
 const dbType = (process.env.DB_TYPE || 'sqlite').toLowerCase();
 const postgresUrl =
-  process.env.DATABASE_URL ||   process.env.DB_URL ||   process.env.POSTGRES_URL;
+  process.env.DATABASE_URL || process.env.DB_URL || process.env.POSTGRES_URL;
 const sslEnabled =
   (process.env.DB_SSL || (isProduction ? 'true' : 'false')) === 'true';
 const sslConfig = sslEnabled

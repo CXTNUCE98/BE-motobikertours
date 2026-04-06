@@ -98,7 +98,7 @@ export class Booking {
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0, name: 'refund_amount' })
   refundAmount: number;
 
-  @Column({ type: 'datetime', nullable: true, name: 'expires_at' })
+  @Column({ nullable: true, name: 'expires_at' })
   expiresAt: Date;
 
   @CreateDateColumn({ name: 'created_at' })
