@@ -186,7 +186,38 @@ export class ToursService {
     return result;
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, options?: { light?: boolean }) {
+    const { light = false } = options || {};
+
+    // Light mode: only basic info for booking page (skip reviews + itineraries)
+    if (light) {
+      const tour = await this.toursRepository.findOne({
+        where: { id },
+        relations: ['suggestedVehicle'],
+      });
+
+      if (!tour) return null;
+
+      const ratingStats = await this.computeRatingStats(tour.id);
+
+      return {
+        id: tour.id,
+        title: tour.title,
+        thumbnail: tour.thumbnail,
+        priceUsd: tour.priceUsd,
+        discount: tour.discount,
+        duration: tour.duration,
+        durationRange: tour.durationRange,
+        departFrom: tour.departFrom,
+        type: tour.type,
+        isFeatured: tour.isFeatured,
+        description: tour.description,
+        suggestedVehicle: tour.suggestedVehicle,
+        ratingStats,
+      };
+    }
+
+    // Full mode: load all relations (for tour detail page)
     const tour = await this.toursRepository.findOne({
       where: { id },
       relations: [

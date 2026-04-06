@@ -34,8 +34,8 @@ export class ToursController {
   @ApiOperation({ summary: 'Get tour by id' })
   @ApiResponse({ status: 200, description: 'Return tour by id' })
   @ApiResponse({ status: 404, description: 'Tour not found' })
-  findOne(@Param('id') id: string) {
-    return this.toursService.findOne(id);
+  findOne(@Param('id') id: string, @Query('light') light?: string) {
+    return this.toursService.findOne(id, { light: light === 'true' });
   }
 
   @Post()

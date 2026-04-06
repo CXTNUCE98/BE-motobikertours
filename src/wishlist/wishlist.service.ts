@@ -75,4 +75,32 @@ export class WishlistService {
       where: { userId },
     });
   }
+
+  /**
+   * Kiểm tra trạng thái wishlist cho nhiều tour cùng lúc.
+   * Trả về map { tourId: isWishlisted }
+   */
+  async isWishlistedBulk({
+    userId,
+    tourIds,
+  }: {
+    userId: string;
+    tourIds: string[];
+  }): Promise<Record<string, boolean>> {
+    if (!tourIds || tourIds.length === 0) return {};
+
+    const wishlists = await this.wishlistRepository
+      .createQueryBuilder('wishlist')
+      .where('wishlist.userId = :userId', { userId })
+      .andWhere('wishlist.tourId IN (:...tourIds)', { tourIds })
+      .select(['wishlist.tourId'])
+      .getMany();
+
+    const wishlistedIds = new Set(wishlists.map((w) => w.tourId));
+    const result: Record<string, boolean> = {};
+    for (const tourId of tourIds) {
+      result[tourId] = wishlistedIds.has(tourId);
+    }
+    return result;
+  }
 }
