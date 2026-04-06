@@ -1,12 +1,13 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Query, Patch, Delete } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { ToursService } from './tours.service';
 import { CreateTourDto } from './dto/create-tour.dto';
 import { UpdateTourDto } from './dto/update-tour.dto';
 import { GetToursDto } from './dto/get-tours.dto';
 import { EstimateTourDto } from './dto/estimate-tour.dto';
-
-import { Query, Patch, Delete } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @ApiTags('tours')
 @Controller('tours')
@@ -20,6 +21,15 @@ export class ToursController {
     return this.toursService.findAll(query);
   }
 
+  @Get('admin/deleted')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Get all soft-deleted tours (admin only)' })
+  @ApiResponse({ status: 200, description: 'Return soft-deleted tours' })
+  findDeleted() {
+    return this.toursService.findDeleted();
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get tour by id' })
   @ApiResponse({ status: 200, description: 'Return tour by id' })
@@ -29,6 +39,8 @@ export class ToursController {
   }
 
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Create a new tour' })
   @ApiBody({
     description: 'Tour data with thumbnail and images',
@@ -42,7 +54,19 @@ export class ToursController {
     return this.toursService.create(createTourDto);
   }
 
+  @Patch('admin/:id/restore')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Restore a soft-deleted tour (admin only)' })
+  @ApiResponse({ status: 200, description: 'Tour restored successfully' })
+  @ApiResponse({ status: 404, description: 'Tour not found' })
+  restore(@Param('id') id: string) {
+    return this.toursService.restore(id);
+  }
+
   @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Update a tour' })
   @ApiBody({
     description: 'Tour data to update',
@@ -65,6 +89,8 @@ export class ToursController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Delete a tour' })
   @ApiResponse({
     status: 200,

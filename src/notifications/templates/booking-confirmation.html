@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+        .booking-details { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .footer { text-align: center; color: #666; padding: 20px; font-size: 12px; }
+        .btn { display: inline-block; padding: 12px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎉 Đặt tour thành công!</h1>
+        </div>
+        <div class="content">
+            <p>Xin chào <strong>{{customerName}}</strong>,</p>
+            <p>Cảm ơn bạn đã đặt tour tại <strong>Motobike Tours</strong>. Chúng tôi rất vui được đồng hành cùng bạn trong chuyến hành trình sắp tới!</p>
+            
+            <div class="booking-details">
+                <h2>📋 Thông tin đặt chỗ</h2>
+                <div class="detail-row">
+                    <span>Mã đặt chỗ:</span>
+                    <strong>{{bookingId}}</strong>
+                </div>
+                <div class="detail-row">
+                    <span>Tour:</span>
+                    <strong>{{tourName}}</strong>
+                </div>
+                <div class="detail-row">
+                    <span>Ngày khởi hành:</span>
+                    <strong>{{startDate}}</strong>
+                </div>
+                <div class="detail-row">
+                    <span>Số người:</span>
+                    <strong>{{numberOfPeople}} người</strong>
+                </div>
+                <div class="detail-row">
+                    <span>Tổng tiền:</span>
+                    <strong style="color: #667eea; font-size: 18px;">{{totalPrice}} VND</strong>
+                </div>
+            </div>
+
+            <p><strong>🎯 Bước tiếp theo:</strong></p>
+            <ul>
+                <li>Đội ngũ của chúng tôi sẽ liên hệ với bạn trong vòng 24h để xác nhận chi tiết</li>
+                <li>Vui lòng chuẩn bị đầy đủ giấy tờ cá nhân trước ngày khởi hành</li>
+                <li>Kiểm tra email thường xuyên để nhận thông tin cập nhật</li>
+            </ul>
+
+            <center>
+                <a href="{{frontendUrl}}/profile/bookings/{{bookingId}}" class="btn">Xem chi tiết booking</a>
+            </center>
+        </div>
+        <div class="footer">
+            <p>Motobike Tours - Your Adventure Awaits!</p>
+            <p>Website: www.motobiketours.com | Hotline: 1900xxxx</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,8 +1,9 @@
 import { IsNumber, IsOptional, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { PaginationDto } from '../../common/dto/pagination.dto';
 
-export class GetHotSpotsDto {
+export class GetHotSpotsDto extends PaginationDto {
   @ApiPropertyOptional({ example: 15.9989 })
   @IsOptional()
   @Type(() => Number)

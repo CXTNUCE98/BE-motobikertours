@@ -6,6 +6,8 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
+  Index,
 } from 'typeorm';
 import { Tour } from '../../tours/entities/tour.entity';
 import { User } from '../../users/entities/user.entity';
@@ -18,17 +20,19 @@ export class Booking {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => Tour, { eager: true })
+  @ManyToOne(() => Tour)
   @JoinColumn({ name: 'tour_id' })
   tour: Tour;
 
+  @Index()
   @Column({ name: 'tour_id' })
   tourId: string;
 
-  @ManyToOne(() => User, { eager: true })
+  @ManyToOne(() => User)
   @JoinColumn({ name: 'user_id' })
   user: User;
 
+  @Index()
   @Column({ name: 'user_id' })
   userId: string;
 
@@ -50,6 +54,7 @@ export class Booking {
   })
   depositPaid: number;
 
+  @Index()
   @Column({
     type: 'varchar',
     default: 'pending',
@@ -72,8 +77,8 @@ export class Booking {
   @Column({ type: 'text', nullable: true, name: 'special_requests' })
   specialRequests: string;
 
-  @Column({ type: 'text', nullable: true, name: 'customer_info' })
-  customerInfo: string; // JSON: {name, email, phone, address}
+  @Column('simple-json', { nullable: true, name: 'customer_info' })
+  customerInfo: { name: string; email: string; phone: string; address?: string };
 
   @Column({ type: 'varchar', nullable: true, name: 'transaction_id' })
   transactionId: string;
@@ -90,6 +95,9 @@ export class Booking {
   })
   discountAmount: number;
 
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0, name: 'refund_amount' })
+  refundAmount: number;
+
   @Column({ type: 'datetime', nullable: true, name: 'expires_at' })
   expiresAt: Date;
 
@@ -98,4 +106,7 @@ export class Booking {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
+
+  @DeleteDateColumn({ name: 'deleted_at' })
+  deletedAt: Date;
 }

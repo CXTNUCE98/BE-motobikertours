@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -13,6 +14,8 @@ import { EmailService } from '../notifications/email.service';
 
 @Injectable()
 export class PaymentsService {
+  private readonly logger = new Logger(PaymentsService.name);
+
   constructor(
     @InjectRepository(Booking)
     private bookingsRepository: Repository<Booking>,
@@ -118,6 +121,7 @@ export class PaymentsService {
     // Find booking
     const booking = await this.bookingsRepository.findOne({
       where: { id: bookingId },
+      relations: ['tour', 'user'],
     });
 
     if (!booking) {
@@ -155,7 +159,7 @@ export class PaymentsService {
         await this.emailService.sendPaymentSuccess(booking);
       } catch (emailError) {
         // Log email error but don't fail the transaction
-        console.error('Email sending failed:', emailError);
+        this.logger.error('Email sending failed:', emailError);
       }
 
       return {

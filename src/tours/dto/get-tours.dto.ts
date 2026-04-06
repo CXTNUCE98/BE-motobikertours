@@ -5,6 +5,7 @@ import {
   IsArray,
   IsEnum,
   IsBoolean,
+  IsIn,
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
@@ -78,4 +79,20 @@ export class GetToursDto extends PaginationDto {
     return value;
   })
   isFeatured?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Sort by column',
+    enum: ['priceUsd', 'createdAt', 'durationRange', 'title'],
+  })
+  @IsOptional()
+  @IsIn(['priceUsd', 'createdAt', 'durationRange', 'title'])
+  sortBy?: string;
+
+  @ApiPropertyOptional({
+    description: 'Sort order',
+    enum: ['ASC', 'DESC'],
+  })
+  @IsOptional()
+  @IsIn(['ASC', 'DESC'])
+  sortOrder?: 'ASC' | 'DESC';
 }

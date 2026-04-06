@@ -7,6 +7,7 @@ import {
   ManyToOne,
   OneToMany,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { BlogPost } from '../../blog/entities/blog-post.entity';
 
@@ -15,6 +16,7 @@ export class Comment {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index()
   @Column('uuid')
   blogId: string;
 
@@ -29,6 +31,7 @@ export class Comment {
   content: string;
 
   // For nested comments (replies)
+  @Index()
   @Column('uuid', { nullable: true })
   parentId: string | null;
 

@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Tour } from '../../tours/entities/tour.entity';
@@ -25,6 +26,7 @@ export class Review {
   userId: string;
 
   @ApiProperty({ example: 'tourId-uuid' })
+  @Index()
   @Column('uuid')
   tourId: string;
 

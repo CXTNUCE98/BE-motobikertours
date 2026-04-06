@@ -1,5 +1,7 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import { Injectable, Inject, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 import { Repository, Brackets } from 'typeorm';
 import { BlogPost } from './entities/blog-post.entity';
 import { CreateBlogDto } from './dto/create-blog.dto';
@@ -10,6 +12,7 @@ export class BlogService {
   constructor(
     @InjectRepository(BlogPost)
     private blogRepository: Repository<BlogPost>,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
   async create(createBlogDto: CreateBlogDto): Promise<BlogPost> {
@@ -27,10 +30,16 @@ export class BlogService {
       slug,
     });
 
-    return this.blogRepository.save(blogPost);
+    const result = await this.blogRepository.save(blogPost);
+    await this.invalidateBlogListCache();
+    return result;
   }
 
   async findAll(query: GetBlogDto) {
+    const cacheKey = `blog:list:${JSON.stringify(query)}`;
+    const cached = await this.cacheManager.get(cacheKey);
+    if (cached) return cached;
+
     const { q, p = 1, r = 10, category, tags, name } = query;
     const skip = (p - 1) * r;
 
@@ -71,21 +80,61 @@ export class BlogService {
       queryBuilder.andWhere('blog.name LIKE :name', { name: `%${name}%` });
     }
 
-    queryBuilder.orderBy('blog.createdAt', 'DESC').skip(skip).take(r);
+    queryBuilder
+      .select([
+        'blog.id',
+        'blog.name',
+        'blog.slug',
+        'blog.lang',
+        'blog.shortDescription',
+        'blog.thumbnail',
+        'blog.category',
+        'blog.author',
+        'blog.tags',
+        'blog.numWords',
+        'blog.status',
+        'blog.createdAt',
+      ])
+      .orderBy('blog.createdAt', 'DESC')
+      .skip(skip)
+      .take(r);
 
     const [data, total] = await queryBuilder.getManyAndCount();
 
-    return {
+    const result = {
       data,
       total,
       page: p,
       perPage: r,
       totalPages: Math.ceil(total / r),
     };
+
+    await this.cacheManager.set(cacheKey, result, 60000);
+    return result;
   }
 
-  findOne(id: string) {
-    return this.blogRepository.findOneBy({ id });
+  async findOne(id: string) {
+    const cacheKey = `blog:detail:${id}`;
+    const cached = await this.cacheManager.get(cacheKey);
+    if (cached) return cached;
+
+    const result = await this.blogRepository.findOneBy({ id });
+    if (result) {
+      await this.cacheManager.set(cacheKey, result, 120000);
+    }
+    return result;
+  }
+
+  private async invalidateBlogListCache(): Promise<void> {
+    const store =
+      (this.cacheManager as any).store ??
+      (this.cacheManager as any).stores?.[0];
+    if (store && typeof store.keys === 'function') {
+      const keys: string[] = await store.keys('blog:list:*');
+      await Promise.all(keys.map((key) => this.cacheManager.del(key)));
+    } else {
+      await this.cacheManager.clear();
+    }
   }
 
   private generateSlug(name: string): string {
